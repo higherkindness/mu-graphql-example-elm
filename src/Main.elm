@@ -9,28 +9,35 @@ import Html exposing (Html, div, text)
 import Task exposing (Task)
 
 
+{-| Responses to `authorNameRequest` are decoded into this type.
+-}
 type alias Author =
     { name : String
-    , books : List Book
+    , books : List String
     }
 
 
-type alias Book =
-    { id : Int
-    , title : String
+{-| The definition of `authorNameRequest` builds up a query request value that
+will later be encoded into the following GraphQL query document:
+
+    query authorByName($name: String!) {
+      author(name: $name) {
+        name
+        books {
+          title
+        }
+      }
     }
 
-
-authorQuery : Document Query Author { name : String }
-authorQuery =
+-}
+authorNameRequest : Request Query Author
+authorNameRequest =
     let
-        authorName =
+        name =
             Var.required "name" .name Var.string
 
         book =
-            object Book
-                |> with (field "id" [] int)
-                |> with (field "title" [] string)
+            extract (field "title" [] string)
 
         author =
             object Author
@@ -40,44 +47,28 @@ authorQuery =
         queryRoot =
             extract
                 (field "author"
-                    [ ( "name", Arg.variable authorName ) ]
+                    [ ( "name", Arg.variable name ) ]
                     author
                 )
     in
-    namedQueryDocument "authorByName" queryRoot
+    namedQueryDocument "authorByName" queryRoot |> request { name = "Michael Ende" }
 
 
-authorNameRequest : Request Query Author
-authorNameRequest =
-    authorQuery
-        |> request
-            { name = "nde" }
-
-
-type alias AuthorResponse =
+type alias AuthorBooksResponse =
     Result GraphQLClient.Error Author
 
 
 type alias Model =
-    Maybe AuthorResponse
+    Maybe AuthorBooksResponse
 
 
 type Msg
-    = ReceiveQueryResponse AuthorResponse
+    = ReceiveQueryResponse AuthorBooksResponse
 
 
 sendQueryRequest : Request Query a -> Task GraphQLClient.Error a
 sendQueryRequest request =
-    let
-        options =
-            { method = "POST"
-            , headers = []
-            , url = "http://localhost:8080" -- GraphQL URL endpoint
-            , timeout = Nothing
-            , withCredentials = False
-            }
-    in
-    GraphQLClient.customSendQuery options request
+    GraphQLClient.sendQuery "http://localhost:8000" request
 
 
 sendAuthorNameQuery : Cmd Msg
