@@ -1,11 +1,11 @@
 module Main exposing (main)
 
 import Browser
-import GraphQL.Client.Http as GraphQLClient
+import GraphQL.Client.Http as GraphQL
 import GraphQL.Request.Builder exposing (..)
 import GraphQL.Request.Builder.Arg as Arg
 import GraphQL.Request.Builder.Variable as Var
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, h1, p, text)
 import Task exposing (Task)
 
 
@@ -55,7 +55,7 @@ authorNameRequest =
 
 
 type alias AuthorBooksResponse =
-    Result GraphQLClient.Error Author
+    Result GraphQL.Error Author
 
 
 type alias Model =
@@ -66,9 +66,9 @@ type Msg
     = ReceiveQueryResponse AuthorBooksResponse
 
 
-sendQueryRequest : Request Query a -> Task GraphQLClient.Error a
+sendQueryRequest : Request Query a -> Task GraphQL.Error a
 sendQueryRequest request =
-    GraphQLClient.sendQuery "http://localhost:8000" request
+    GraphQL.sendQuery "http://localhost:8000" request
 
 
 sendAuthorNameQuery : Cmd Msg
@@ -94,8 +94,20 @@ init =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ model |> Debug.toString |> text ]
+    case model of
+        Nothing ->
+            h1 [] [ text "GraphQL server didn't respond..." ]
+
+        Just response ->
+            case response of
+                Ok { name, books } ->
+                    div []
+                        (h1 [] [ text name ]
+                            :: List.map (\book -> p [] [ text book ]) books
+                        )
+
+                Err msg ->
+                    div [] [ msg |> Debug.toString |> text ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
