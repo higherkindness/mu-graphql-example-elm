@@ -5,7 +5,9 @@ import GraphQL.Client.Http as GraphQL
 import GraphQL.Request.Builder exposing (..)
 import GraphQL.Request.Builder.Arg as Arg
 import GraphQL.Request.Builder.Variable as Var
-import Html exposing (Html, div, h1, p, text)
+import Html exposing (Html, div, h1, input, p, text)
+import Html.Attributes exposing (class, placeholder, value)
+import Html.Events exposing (onInput)
 import Task exposing (Task)
 
 
@@ -30,8 +32,8 @@ will later be encoded into the following GraphQL query document:
     }
 
 -}
-authorNameRequest : Request Query Author
-authorNameRequest =
+authorNameRequest : String -> Request Query Author
+authorNameRequest nm =
     let
         name =
             Var.required "name" .name Var.string
@@ -51,7 +53,7 @@ authorNameRequest =
                     author
                 )
     in
-    namedQueryDocument "authorByName" queryRoot |> request { name = "Michael Ende" }
+    namedQueryDocument "authorByName" queryRoot |> request { name = nm }
 
 
 type alias AuthorBooksResponse =
@@ -59,11 +61,14 @@ type alias AuthorBooksResponse =
 
 
 type alias Model =
-    Maybe AuthorBooksResponse
+    { query : String
+    , response : Maybe AuthorBooksResponse
+    }
 
 
 type Msg
-    = ReceiveQueryResponse AuthorBooksResponse
+    = ChangeQuery String
+    | ReceiveQueryResponse AuthorBooksResponse
 
 
 sendQueryRequest : Request Query a -> Task GraphQL.Error a
@@ -71,9 +76,10 @@ sendQueryRequest request =
     GraphQL.sendQuery "http://localhost:8000" request
 
 
-sendAuthorNameQuery : Cmd Msg
-sendAuthorNameQuery =
-    sendQueryRequest authorNameRequest
+sendAuthorNameQuery : String -> Cmd Msg
+sendAuthorNameQuery name =
+    authorNameRequest name
+        |> sendQueryRequest
         |> Task.attempt ReceiveQueryResponse
 
 
@@ -89,27 +95,35 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Nothing, sendAuthorNameQuery )
+    ( Model "" Nothing, Cmd.none )
 
 
 view : Model -> Html Msg
-view model =
-    case model of
-        Nothing ->
-            h1 [] [ text "GraphQL server didn't respond..." ]
+view { query, response } =
+    div []
+        [ input [ placeholder "author name", value query, onInput ChangeQuery ] []
+        , case response of
+            Nothing ->
+                h1 [] [ text "GraphQL server didn't respond..." ]
 
-        Just response ->
-            case response of
-                Ok { name, books } ->
-                    div []
-                        (h1 [] [ text name ]
-                            :: List.map (\book -> p [] [ text book ]) books
-                        )
+            Just res ->
+                case res of
+                    Ok { name, books } ->
+                        div []
+                            (h1 [] [ text name ]
+                                :: List.map (\book -> p [] [ text book ]) books
+                            )
 
-                Err msg ->
-                    div [] [ msg |> Debug.toString |> text ]
+                    Err msg ->
+                        div [ class "error" ] [ msg |> Debug.toString |> text ]
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update (ReceiveQueryResponse response) _ =
-    ( Just response, Cmd.none )
+update action { query, response } =
+    case action of
+        ChangeQuery name ->
+            ( Model name response, sendAuthorNameQuery name )
+
+        ReceiveQueryResponse res ->
+            ( Model query (Just res), Cmd.none )
