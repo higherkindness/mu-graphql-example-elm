@@ -9,6 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install packages
+      run: npm i
+    - name: fetch schema
+      run: curl https://raw.githubusercontent.com/higherkindness/mu-haskell/master/examples/library/library.graphql > library.graphql
+    - name: Codegen
+      run: npm run codegen
     - uses: jorelali/setup-elm@v1
       with:
         elm-version: 0.19.1
