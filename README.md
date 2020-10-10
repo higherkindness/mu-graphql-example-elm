@@ -44,10 +44,6 @@ $ npm start
         "query": "{
           books(title: \"Recursion ans Laziness\") {
             title
-            id
-            author {
-              name
-            }
           }
         }"
       }' \
@@ -61,38 +57,18 @@ $ npm start
       "data": {
         "books": [
           {
-            "author": {
-              "name": "Robert Louis Stevenson"
-            },
-            "id": 1,
             "title": "Treasure Island"
           },
           {
-            "author": {
-              "name": "Robert Louis Stevenson"
-            },
-            "id": 2,
             "title": "Strange Case of Dr Jekyll and Mr Hyde"
           },
           {
-            "author": {
-              "name": "Immanuel Kant"
-            },
-            "id": 3,
             "title": "Critique of Pure Reason"
           },
           {
-            "author": {
-              "name": "Michael Ende"
-            },
-            "id": 4,
             "title": "The Neverending Story"
           },
           {
-            "author": {
-              "name": "Michael Ende"
-            },
-            "id": 5,
             "title": "Momo"
           }
         ]
