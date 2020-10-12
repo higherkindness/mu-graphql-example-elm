@@ -1,86 +1,13 @@
 module Main exposing (main)
 
 import Browser
-import GraphQL.Client.Http as GraphQL
-import GraphQL.Request.Builder exposing (..)
-import GraphQL.Request.Builder.Arg as Arg
-import GraphQL.Request.Builder.Variable as Var
-import Html exposing (Html, div, h1, input, p, text)
+import Gql exposing (AuthorData, BookData)
+import Graphql.Http
+import Html exposing (Html, div, h1, input, p, span, text)
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (onInput)
+import RemoteData exposing (RemoteData(..))
 import Task exposing (Task)
-
-
-{-| Responses to `authorNameRequest` are decoded into this type.
--}
-type alias Author =
-    { name : String
-    , books : List String
-    }
-
-
-{-| The definition of `authorNameRequest` builds up a query request value that
-will later be encoded into the following GraphQL query document:
-
-    query authorByName($name: String!) {
-      author(name: $name) {
-        name
-        books {
-          title
-        }
-      }
-    }
-
--}
-authorNameRequest : String -> Request Query Author
-authorNameRequest nm =
-    let
-        name =
-            Var.required "name" .name Var.string
-
-        book =
-            extract (field "title" [] string)
-
-        author =
-            object Author
-                |> with (field "name" [] string)
-                |> with (field "books" [] (list book))
-
-        queryRoot =
-            extract
-                (field "author"
-                    [ ( "name", Arg.variable name ) ]
-                    author
-                )
-    in
-    namedQueryDocument "authorByName" queryRoot |> request { name = nm }
-
-
-type alias AuthorBooksResponse =
-    Result GraphQL.Error Author
-
-
-type alias Model =
-    { query : String
-    , response : Maybe AuthorBooksResponse
-    }
-
-
-type Msg
-    = ChangeQuery String
-    | ReceiveQueryResponse AuthorBooksResponse
-
-
-sendQueryRequest : Request Query a -> Task GraphQL.Error a
-sendQueryRequest request =
-    GraphQL.sendQuery "http://localhost:8000" request
-
-
-sendAuthorNameQuery : String -> Cmd Msg
-sendAuthorNameQuery name =
-    authorNameRequest name
-        |> sendQueryRequest
-        |> Task.attempt ReceiveQueryResponse
 
 
 main : Program () Model Msg
@@ -95,35 +22,126 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "" Nothing, Cmd.none )
+    ( { query = ""
+      , response = RemoteData.NotAsked
+      }
+    , Cmd.none
+    )
 
 
-view : Model -> Html Msg
-view { query, response } =
-    div []
-        [ input [ placeholder "author name", value query, onInput ChangeQuery ] []
-        , case response of
-            Nothing ->
-                h1 [] [ text "GraphQL server didn't respond..." ]
+type alias Model =
+    { query : String
+    , response : RemoteData (Graphql.Http.Error ()) ( List AuthorData, List BookData )
+    }
 
-            Just res ->
-                case res of
-                    Ok { name, books } ->
-                        div []
-                            (h1 [] [ text name ]
-                                :: List.map (\book -> p [] [ text book ]) books
-                            )
 
-                    Err msg ->
-                        div [ class "error" ] [ msg |> Debug.toString |> text ]
-        ]
+type Msg
+    = ChangeQuery String
+    | GotResponse (RemoteData (Graphql.Http.Error ()) ( List AuthorData, List BookData ))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update action { query, response } =
-    case action of
-        ChangeQuery name ->
-            ( Model name response, sendAuthorNameQuery name )
+update msg model =
+    case msg of
+        ChangeQuery queryStr ->
+            case String.trim queryStr of
+                "" ->
+                    ( { model
+                        | query = ""
+                        , response = RemoteData.NotAsked
+                      }
+                    , Cmd.none
+                    )
 
-        ReceiveQueryResponse res ->
-            ( Model query (Just res), Cmd.none )
+                str ->
+                    ( { model
+                        | query = str
+                        , response = RemoteData.Loading
+                      }
+                    , Gql.findAuthorsAndBooks str
+                        |> Task.attempt (RemoteData.fromResult >> GotResponse)
+                    )
+
+        GotResponse res ->
+            ( { model | response = res }
+            , Cmd.none
+            )
+
+
+{-| Show error message
+elm-graphql allows also to get some "possibly recovered data",
+but we don't care, that's why we have a Unit type as a parameter to Error
+-}
+showError : Graphql.Http.Error () -> String
+showError err =
+    case err of
+        Graphql.Http.HttpError Graphql.Http.NetworkError ->
+            "Network error"
+
+        Graphql.Http.HttpError (Graphql.Http.BadUrl _) ->
+            "BadUrl"
+
+        Graphql.Http.HttpError Graphql.Http.Timeout ->
+            "Timeout"
+
+        Graphql.Http.HttpError (Graphql.Http.BadStatus _ _) ->
+            "BadStatus"
+
+        Graphql.Http.HttpError (Graphql.Http.BadPayload _) ->
+            "BadStatus"
+
+        Graphql.Http.GraphqlError _ graphqlErrors ->
+            List.map (\e -> e.message) graphqlErrors |> String.concat
+
+
+showRemoteData : (a -> Html Msg) -> RemoteData (Graphql.Http.Error ()) a -> Html Msg
+showRemoteData viewFn data =
+    case data of
+        RemoteData.NotAsked ->
+            div [] []
+
+        RemoteData.Loading ->
+            div [] [ text "Loading..." ]
+
+        RemoteData.Success x ->
+            viewFn x
+
+        RemoteData.Failure e ->
+            div [ class "error" ] [ text (showError e) ]
+
+
+viewAuthorsData : List AuthorData -> List (Html Msg)
+viewAuthorsData =
+    List.map
+        (\x ->
+            div [ class "search-results-item" ]
+                [ span [ class "meta" ] [ text "Author" ]
+                , span [ class "author-name" ] [ text x.name ]
+                ]
+        )
+
+
+viewBooksData : List BookData -> List (Html Msg)
+viewBooksData =
+    List.map
+        (\x ->
+            div [ class "search-results-item" ]
+                [ span [ class "meta" ] [ text "Book" ]
+                , span [ class "book-title" ] [ text x.title ]
+                , span [] [ text " by " ]
+                , span [ class "author-name" ] [ text x.author.name ]
+                ]
+        )
+
+
+viewAuthorsAndBooks : ( List AuthorData, List BookData ) -> Html Msg
+viewAuthorsAndBooks ( authors, books ) =
+    div [] (viewAuthorsData authors ++ viewBooksData books)
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ input [ placeholder "author name", value model.query, onInput ChangeQuery ] []
+        , div [] [ showRemoteData viewAuthorsAndBooks model.response ]
+        ]

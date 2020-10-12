@@ -12,3 +12,9 @@ node_modules
 
 # Desktop Services Store on macOS
 .DS_Store
+
+# Elm-graphql generated code
+src/LibraryApi
+
+# Fetched GraphQL schema
+library.graphql
