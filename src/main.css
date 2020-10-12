@@ -30,7 +30,7 @@ input {
   padding: 5px 0;
 }
 
-.search-results-item > * + *{
+.search-results-item > * + * {
   margin-left: 5px;
 }
 
@@ -49,5 +49,5 @@ input {
 }
 
 .book-title {
-  color: #117A65;
+  color: #117a65;
 }
