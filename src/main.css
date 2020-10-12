@@ -2,9 +2,9 @@
   height: inherit;
 }
 body {
-  font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Source Sans Pro", "Trebuchet MS", "Lucida Grande",
+    "Bitstream Vera Sans", "Helvetica Neue", sans-serif;
   margin: 0;
-  text-align: center;
   color: #293c4b;
   padding: 10%;
 }
@@ -23,7 +23,31 @@ input {
   border: 1px solid #48a9dc;
   border-radius: 3px;
 }
+
+.search-results-item {
+  display: flex;
+  align-items: baseline;
+  padding: 5px 0;
+}
+
+.search-results-item > * + *{
+  margin-left: 5px;
+}
+
 .error {
-  color: red;
+  color: #a93226;
   margin: 20px;
+}
+
+.meta {
+  font-size: 10px;
+  color: #85929e;
+}
+
+.author-name {
+  color: #154360;
+}
+
+.book-title {
+  color: #117A65;
 }
