@@ -22,22 +22,26 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { query = ""
-      , response = RemoteData.NotAsked
-      }
-    , Cmd.none
-    )
+    ( { query = "", response = RemoteData.NotAsked }, Cmd.none )
+
+
+type alias GraphqlResponse a =
+    RemoteData (Graphql.Http.Error ()) a
+
+
+type alias Response =
+    GraphqlResponse ( List AuthorData, List BookData )
 
 
 type alias Model =
     { query : String
-    , response : RemoteData (Graphql.Http.Error ()) ( List AuthorData, List BookData )
+    , response : Response
     }
 
 
 type Msg
     = ChangeQuery String
-    | GotResponse (RemoteData (Graphql.Http.Error ()) ( List AuthorData, List BookData ))
+    | GotResponse Response
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -46,26 +50,18 @@ update msg model =
         ChangeQuery queryStr ->
             case String.trim queryStr of
                 "" ->
-                    ( { model
-                        | query = ""
-                        , response = RemoteData.NotAsked
-                      }
+                    ( { model | query = "", response = RemoteData.NotAsked }
                     , Cmd.none
                     )
 
                 str ->
-                    ( { model
-                        | query = str
-                        , response = RemoteData.Loading
-                      }
+                    ( { model | query = str, response = RemoteData.Loading }
                     , Gql.findAuthorsAndBooks str
                         |> Task.attempt (RemoteData.fromResult >> GotResponse)
                     )
 
         GotResponse res ->
-            ( { model | response = res }
-            , Cmd.none
-            )
+            ( { model | response = res }, Cmd.none )
 
 
 {-| Show error message
@@ -94,7 +90,7 @@ showError err =
             List.map (\e -> e.message) graphqlErrors |> String.concat
 
 
-showRemoteData : (a -> Html Msg) -> RemoteData (Graphql.Http.Error ()) a -> Html Msg
+showRemoteData : (a -> Html Msg) -> GraphqlResponse a -> Html Msg
 showRemoteData viewFn data =
     case data of
         RemoteData.NotAsked ->
@@ -113,10 +109,10 @@ showRemoteData viewFn data =
 viewAuthorsData : List AuthorData -> List (Html Msg)
 viewAuthorsData =
     List.map
-        (\x ->
+        (\{ name } ->
             div [ class "search-results-item" ]
                 [ span [ class "meta" ] [ text "Author" ]
-                , span [ class "author-name" ] [ text x.name ]
+                , span [ class "author-name" ] [ text name ]
                 ]
         )
 
@@ -124,12 +120,12 @@ viewAuthorsData =
 viewBooksData : List BookData -> List (Html Msg)
 viewBooksData =
     List.map
-        (\x ->
+        (\{ title, author } ->
             div [ class "search-results-item" ]
                 [ span [ class "meta" ] [ text "Book" ]
-                , span [ class "book-title" ] [ text x.title ]
+                , span [ class "book-title" ] [ text title ]
                 , span [] [ text " by " ]
-                , span [ class "author-name" ] [ text x.author.name ]
+                , span [ class "author-name" ] [ text author.name ]
                 ]
         )
 

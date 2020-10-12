@@ -21,12 +21,16 @@ type alias AuthorData =
     { name : String }
 
 
+type alias GraphqlTask t =
+    Task (Graphql.Http.Error ()) t
+
+
 authorSelection : SelectionSet AuthorData Author
 authorSelection =
     SelectionSet.map AuthorData Author.name
 
 
-findAuthors : String -> Task (Graphql.Http.Error ()) (List AuthorData)
+findAuthors : String -> GraphqlTask (List AuthorData)
 findAuthors name =
     Query.authors (AuthorsRequiredArguments name) authorSelection
         |> Graphql.Http.queryRequest graphqlUrl
@@ -42,12 +46,10 @@ type alias BookData =
 
 bookSelection : SelectionSet BookData Book
 bookSelection =
-    SelectionSet.map2 BookData
-        Book.title
-        (Book.author authorSelection)
+    SelectionSet.map2 BookData Book.title <| Book.author authorSelection
 
 
-findBooks : String -> Task (Graphql.Http.Error ()) (List BookData)
+findBooks : String -> GraphqlTask (List BookData)
 findBooks title =
     Query.books (BooksRequiredArguments title) bookSelection
         |> Graphql.Http.queryRequest graphqlUrl
@@ -55,7 +57,11 @@ findBooks title =
         |> Task.mapError (Graphql.Http.mapError <| always ())
 
 
-findAuthorsAndBooks : String -> Task (Graphql.Http.Error ()) ( List AuthorData, List BookData )
+findAuthorsAndBooks : String -> GraphqlTask ( List AuthorData, List BookData )
 findAuthorsAndBooks queryStr =
     findAuthors queryStr
-        |> Task.andThen (\authors -> findBooks queryStr |> Task.map (\books -> ( authors, books )))
+        |> Task.andThen
+            (\authors ->
+                findBooks queryStr
+                    |> Task.map (\books -> ( authors, books ))
+            )
