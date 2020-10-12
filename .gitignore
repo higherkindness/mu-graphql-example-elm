@@ -9,6 +9,7 @@ repl-temp-*
 
 # Dependency directories
 node_modules
+package-lock.json
 
 # Desktop Services Store on macOS
 .DS_Store
