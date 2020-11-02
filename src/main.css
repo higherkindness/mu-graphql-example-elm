@@ -82,10 +82,10 @@ input[type="text"] {
   outline: 0;
   flex-grow: 1;
   width: 100%;
-  margin-right: 10px;
   height: 36px;
-  font-size: 15px;
   padding: 0 10px;
+  margin: 16px 0;
+  font-size: 15px;
   box-sizing: border-box;
   border: 1px solid var(--main-color-40);
   border-radius: 3px;
@@ -108,6 +108,9 @@ button {
   background-color: var(--contrast-background-color-100);
   color: var(--white-100);
   transition: all var(--quick) var(--smooth);
+}
+button + button {
+  margin-left: 10px;
 }
 button:hover,
 button:focus {
@@ -145,30 +148,20 @@ button:active {
 
 .app-container {
   width: calc(100vw - 30px);
-  max-width: 600px;
+  max-width: 400px;
   padding: 20px 15px 10px;
 }
 
 /* Search page */
 
-.search-query-input {
-  margin: 16px 0;
-}
-
-.search-results {
-}
-
 .search-results > * {
   padding: 12px;
   border-radius: 3px;
-  transition: background-color var(--quick) var(--smooth);
+  transition: all var(--quick) var(--smooth);
 }
 
 .search-results > *:hover {
   background-color: var(--main-color-03);
-}
-
-.author {
 }
 
 .book {

@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Editor
 import Html exposing (Html, a, button, div, h1, input, p, span, text)
 import Html.Attributes exposing (class, href, placeholder, rel, target, type_, value)
 import Html.Events exposing (onClick, onInput)
@@ -19,7 +20,7 @@ main =
 
 type Model
     = SearchPage Search.Model
-    | EditorPage
+    | EditorPage Editor.Model
 
 
 init : ( Model, Cmd Msg )
@@ -33,7 +34,7 @@ init =
 
 type Msg
     = SearchMsg Search.Msg
-    | EditorMsg
+    | EditorMsg Editor.Msg
 
 
 {-| This update function delegates its work to each page's update functions.
@@ -43,27 +44,27 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update wrappedMsg wrappedModel =
     case ( wrappedMsg, wrappedModel ) of
         ( SearchMsg Search.OpenEditorClicked, SearchPage model ) ->
-            ( EditorPage, Cmd.none )
+            Editor.init
+                |> Tuple.mapBoth EditorPage (Cmd.map EditorMsg)
 
         ( SearchMsg msg, SearchPage model ) ->
-            let
-                ( newModel, cmd ) =
-                    Search.update msg model
-            in
-            ( SearchPage newModel, Cmd.map SearchMsg cmd )
+            Search.update msg model
+                |> Tuple.mapBoth SearchPage (Cmd.map SearchMsg)
 
-        -- ( EditorMsg msg, Editor model ) ->
-        --     let
-        --         ( newModel, cmd ) =
-        --             Editor.update msg model
-        --     in
-        --     ( Search newModel, Cmd.map EditorMsg cmd )
+        ( EditorMsg Editor.CancelClicked, EditorPage model ) ->
+            Search.init
+                |> Tuple.mapBoth SearchPage (Cmd.map SearchMsg)
+
+        ( EditorMsg msg, EditorPage model ) ->
+            Editor.update msg model
+                |> Tuple.mapBoth EditorPage (Cmd.map EditorMsg)
+
         _ ->
             ( wrappedModel, Cmd.none )
 
 
-showHeading : Html msg
-showHeading =
+heading : Html msg
+heading =
     div []
         [ h1 [] [ text "Library example" ]
         , p []
@@ -84,13 +85,13 @@ showHeading =
 
 
 view : Model -> Html Msg
-view model =
+view wrappedModel =
     div [ class "app-container" ]
-        [ showHeading
-        , case model of
-            SearchPage m ->
-                Html.map SearchMsg (Search.view m)
+        [ heading
+        , case wrappedModel of
+            SearchPage model ->
+                Html.map SearchMsg (Search.view model)
 
-            EditorPage ->
-                div [] [ text "editor" ]
+            EditorPage model ->
+                Html.map EditorMsg (Editor.view model)
         ]

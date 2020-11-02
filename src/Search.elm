@@ -1,8 +1,5 @@
 module Search exposing (Model, Msg(..), init, update, view)
 
--- import LibraryApi.Mutation as Mutation exposing (NewAuthorRequiredArguments)
--- import LibraryApi.InputObject exposing (NewAuthor)
-
 import Components
 import Gql exposing (GraphqlResponse, GraphqlTask)
 import Graphql.Http
@@ -49,8 +46,12 @@ init =
     )
 
 
+
+-- update and Tasks
+
+
 type Msg
-    = ChangeQuery String
+    = QueryChanged String
     | GotResponse (GraphqlResponse SearchResults)
     | OpenEditorClicked
 
@@ -99,7 +100,7 @@ findAuthorsAndBooksTask =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeQuery queryStr ->
+        QueryChanged queryStr ->
             case String.trim queryStr of
                 "" ->
                     ( { model | query = "", searchResults = RemoteData.NotAsked }
@@ -119,11 +120,13 @@ update msg model =
             ( model, Cmd.none )
 
 
+
+-- views
+
+
 showAuthor : AuthorData -> Html Msg
 showAuthor { name } =
-    div [ class "author fade-in" ]
-        [ span [ class "author-name" ] [ text name ]
-        ]
+    div [ class "fade-in" ] [ text name ]
 
 
 showBook : BookData -> Html Msg
@@ -151,22 +154,16 @@ showSearchResults ( authors, books ) =
             div [ class "search-results fade-in" ] results
 
 
-showSearchInput : String -> Html Msg
-showSearchInput query =
-    input
-        [ type_ "text"
-        , placeholder "For example, Kant"
-        , value query
-        , onInput ChangeQuery
-        , class "search-query-input"
-        ]
-        []
-
-
 view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick OpenEditorClicked ] [ text "Add a book" ]
-        , showSearchInput model.query
+        , input
+            [ type_ "text"
+            , placeholder "For example, Kant"
+            , value model.query
+            , onInput QueryChanged
+            ]
+            []
         , Components.showRemoteData showSearchResults model.searchResults
         ]
