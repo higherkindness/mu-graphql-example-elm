@@ -3,6 +3,7 @@ module Search exposing (Model, Msg(..), init, update, view)
 -- import LibraryApi.Mutation as Mutation exposing (NewAuthorRequiredArguments)
 -- import LibraryApi.InputObject exposing (NewAuthor)
 
+import Components
 import Gql exposing (GraphqlResponse, GraphqlTask)
 import Graphql.Http
 import Graphql.Operation exposing (RootMutation, RootQuery)
@@ -16,7 +17,6 @@ import LibraryApi.Object.Book as Book
 import LibraryApi.Query as Query exposing (AuthorsRequiredArguments, BooksRequiredArguments)
 import RemoteData
 import Task exposing (Task)
-import ViewHelpers
 
 
 type alias AuthorData =
@@ -129,10 +129,10 @@ showAuthor { name } =
 showBook : BookData -> Html Msg
 showBook { title, author } =
     div [ class "book fade-in" ]
-        [ div [ class "book-cover" ] []
+        [ div [ class "book__cover" ] []
         , div []
-            [ p [ class "book-title" ] [ text title ]
-            , p [ class "book-author" ] [ text <| "by " ++ author.name ]
+            [ p [ class "book__title" ] [ text title ]
+            , p [ class "book__author" ] [ text <| "by " ++ author.name ]
             ]
         ]
 
@@ -151,14 +151,6 @@ showSearchResults ( authors, books ) =
             div [ class "search-results fade-in" ] results
 
 
-showAddButton : Html Msg
-showAddButton =
-    div [ class "add-button", onClick OpenEditorClicked ]
-        [ span [ class "round-icon" ] [ text "+" ]
-        , span [ class "add-button-label" ] [ text "Add a Book" ]
-        ]
-
-
 showSearchInput : String -> Html Msg
 showSearchInput query =
     input
@@ -166,6 +158,7 @@ showSearchInput query =
         , placeholder "For example, Kant"
         , value query
         , onInput ChangeQuery
+        , class "search-query-input"
         ]
         []
 
@@ -173,9 +166,7 @@ showSearchInput query =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ class "search-row" ]
-            [ showSearchInput model.query
-            , showAddButton
-            ]
-        , ViewHelpers.showRemoteData showSearchResults model.searchResults
+        [ button [ onClick OpenEditorClicked ] [ text "Add a book" ]
+        , showSearchInput model.query
+        , Components.showRemoteData showSearchResults model.searchResults
         ]

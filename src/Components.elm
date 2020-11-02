@@ -1,4 +1,4 @@
-module ViewHelpers exposing (..)
+module Components exposing (..)
 
 import Gql exposing (GraphqlResponse, GraphqlTask)
 import Graphql.Http
