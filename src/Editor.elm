@@ -37,7 +37,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { bookTitle = ""
-      , authorInput = NewAutorName ""
+      , authorInput = ExistingAuthor { id = 42, name = "John Galt" }
       }
     , Cmd.none
     )
@@ -50,6 +50,8 @@ init =
 type Msg
     = BookTitleChanged String
     | AuthorNameChanged String
+    | SelectAuthorClicked AuthorData
+    | DeselectAuthorClicked
     | CancelClicked
     | SubmitClicked
 
@@ -68,6 +70,12 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        SelectAuthorClicked authorData ->
+            ( { model | authorInput = ExistingAuthor authorData }, Cmd.none )
+
+        DeselectAuthorClicked ->
+            ( { model | authorInput = NewAutorName "" }, Cmd.none )
+
         CancelClicked ->
             ( model, Cmd.none )
 
@@ -79,36 +87,48 @@ update msg model =
 -- views
 
 
+bookTitleInput : String -> Html Msg
+bookTitleInput bookTitle =
+    label [ for "book-title-input" ]
+        [ text "Book title"
+        , input
+            [ type_ "text"
+            , id "book-title-input"
+            , placeholder ""
+            , value bookTitle
+            , onInput BookTitleChanged
+            ]
+            []
+        ]
+
+
 authorInput : AuthorInput -> Html Msg
 authorInput author =
     case author of
         NewAutorName str ->
-            input
-                [ type_ "text"
-                , id "author-name-input"
-                , placeholder ""
-                , value str
-                , onInput AuthorNameChanged
+            label [ for "author-name-input" ]
+                [ text "Author name"
+                , input
+                    [ type_ "text"
+                    , id "author-name-input"
+                    , placeholder ""
+                    , value str
+                    , onInput AuthorNameChanged
+                    ]
+                    []
                 ]
-                []
 
-        ExistingAuthor _ ->
-            div [] []
+        ExistingAuthor authorData ->
+            div [ class "existing-author" ]
+                [ text <| "Author: " ++ authorData.name
+                , button [ onClick DeselectAuthorClicked ] [ text "Deselect" ]
+                ]
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ label [ for "book-title-input" ] [ text "Book title" ]
-        , input
-            [ type_ "text"
-            , id "book-title-input"
-            , placeholder ""
-            , value model.bookTitle
-            , onInput BookTitleChanged
-            ]
-            []
-        , label [ for "author-name-input" ] [ text "Author name" ]
+        [ bookTitleInput model.bookTitle
         , authorInput model.authorInput
         , div []
             [ button [ onClick CancelClicked ] [ text "Cancel" ]

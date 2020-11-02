@@ -189,3 +189,12 @@ button:active {
 }
 
 /* Editor page */
+
+.existing-author {
+  margin-bottom: 16px;
+}
+
+.existing-author button {
+  margin-left: 10px;
+  background-color: var(--main-color-60);
+}
