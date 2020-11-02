@@ -32,6 +32,10 @@ init =
     ( SearchPage model, Cmd.map SearchMsg cmd )
 
 
+
+-- update
+
+
 type Msg
     = SearchMsg Search.Msg
     | EditorMsg Editor.Msg
@@ -61,6 +65,10 @@ update wrappedMsg wrappedModel =
 
         _ ->
             ( wrappedModel, Cmd.none )
+
+
+
+-- views
 
 
 heading : Html msg

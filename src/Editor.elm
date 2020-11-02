@@ -17,16 +17,27 @@ import RemoteData
 import Task exposing (Task)
 
 
+type alias AuthorData =
+    { id : Int
+    , name : String
+    }
+
+
+type AuthorInput
+    = NewAutorName String
+    | ExistingAuthor AuthorData
+
+
 type alias Model =
     { bookTitle : String
-    , authorName : String
+    , authorInput : AuthorInput
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { bookTitle = ""
-      , authorName = ""
+      , authorInput = NewAutorName ""
       }
     , Cmd.none
     )
@@ -50,7 +61,12 @@ update msg model =
             ( { model | bookTitle = newTitle }, Cmd.none )
 
         AuthorNameChanged newName ->
-            ( { model | authorName = newName }, Cmd.none )
+            case model.authorInput of
+                NewAutorName _ ->
+                    ( { model | authorInput = NewAutorName newName }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         CancelClicked ->
             ( model, Cmd.none )
@@ -61,6 +77,23 @@ update msg model =
 
 
 -- views
+
+
+authorInput : AuthorInput -> Html Msg
+authorInput author =
+    case author of
+        NewAutorName str ->
+            input
+                [ type_ "text"
+                , id "author-name-input"
+                , placeholder ""
+                , value str
+                , onInput AuthorNameChanged
+                ]
+                []
+
+        ExistingAuthor _ ->
+            div [] []
 
 
 view : Model -> Html Msg
@@ -76,14 +109,7 @@ view model =
             ]
             []
         , label [ for "author-name-input" ] [ text "Author name" ]
-        , input
-            [ type_ "text"
-            , id "author-name-input"
-            , placeholder ""
-            , value model.authorName
-            , onInput AuthorNameChanged
-            ]
-            []
+        , authorInput model.authorInput
         , div []
             [ button [ onClick CancelClicked ] [ text "Cancel" ]
             , button [ onClick SubmitClicked ] [ text "Submit a book" ]
