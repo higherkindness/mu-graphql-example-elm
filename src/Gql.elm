@@ -1,6 +1,8 @@
 module Gql exposing (..)
 
+import Dict
 import Graphql.Http
+import Graphql.Http.GraphqlError
 import RemoteData exposing (RemoteData(..))
 import Task exposing (Task)
 
@@ -33,3 +35,24 @@ the search string is actually expected to be a pattern for an SQL database
 toPattern : String -> String
 toPattern str =
     "%" ++ str ++ "%"
+
+
+{-| The `library` example from `mu-haskell` returns HTTP 200 with no data if mutation fails.
+It does not reject an HTTP request, and does not provide any error info.
+It was a server implementation decision, so we should deal with it at the client side
+-}
+handleMutationFailure : String -> Maybe a -> Task (Graphql.Http.Error ()) a
+handleMutationFailure entityType =
+    let
+        errMessage =
+            entityType ++ " was not created (rejected by the server)."
+
+        err =
+            Graphql.Http.GraphqlError (Graphql.Http.GraphqlError.ParsedData ())
+                [ { message = errMessage
+                  , locations = Nothing
+                  , details = Dict.fromList []
+                  }
+                ]
+    in
+    Maybe.map Task.succeed >> Maybe.withDefault (Task.fail err)
