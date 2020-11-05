@@ -1,6 +1,5 @@
 module Search exposing (Model, Msg(..), init, update, view)
 
-import Components
 import Gql exposing (GraphqlResponse, GraphqlTask)
 import Graphql.Http
 import Graphql.Operation exposing (RootMutation, RootQuery)
@@ -140,18 +139,24 @@ showBook { title, author } =
         ]
 
 
-showSearchResults : SearchResults -> Html Msg
-showSearchResults ( authors, books ) =
-    let
-        results =
-            List.map showAuthor authors ++ List.map showBook books
-    in
-    case results of
-        [] ->
+showSearchResults : GraphqlResponse SearchResults -> Html Msg
+showSearchResults data =
+    case data of
+        RemoteData.NotAsked ->
+            div [] []
+
+        RemoteData.Loading ->
+            div [] [ p [ class "fade-in-slow" ] [ text ". . ." ] ]
+
+        RemoteData.Failure e ->
+            div [] [ p [ class "error fade-in" ] [ text (Gql.showError e) ] ]
+
+        RemoteData.Success ( [], [] ) ->
             div [ class "no-results fade-in" ] [ text "Nothing found" ]
 
-        _ ->
-            div [ class "search-results fade-in" ] results
+        RemoteData.Success ( authors, books ) ->
+            (List.map showAuthor authors ++ List.map showBook books)
+                |> div [ class "search-results fade-in" ]
 
 
 view : Model -> Html Msg
@@ -165,5 +170,5 @@ view model =
             , onInput QueryChanged
             ]
             []
-        , Components.showRemoteData showSearchResults model.searchResults
+        , showSearchResults model.searchResults
         ]
