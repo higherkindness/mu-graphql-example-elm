@@ -112,13 +112,16 @@ button {
 button + button {
   margin-left: 10px;
 }
-button:hover,
-button:focus {
+button:hover:enabled,
+button:focus:enabled {
   background-color: var(--main-color-100);
   color: var(--white-80);
 }
-button:active {
+button:active:enabled {
   color: var(--white-100);
+}
+button:disabled {
+  background-color: var(--main-color-60);
 }
 
 .fade-in {
