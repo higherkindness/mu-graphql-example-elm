@@ -17,6 +17,10 @@ import RemoteData
 import Task exposing (Task)
 
 
+{-| This data type is similar to the one used in the Search page,
+but there is no need in coupling both pages together by a common type.
+Moreover, it's GraphQL's strong side - we can query exactly what we need, no less and no more
+-}
 type alias AuthorData =
     { id : Int
     , name : String
@@ -32,6 +36,7 @@ type alias Model =
     { bookTitle : String
     , authorInput : AuthorInput
     , createBookResponse : GraphqlResponse String
+    , findAuthorsResponse : GraphqlResponse (List AuthorData)
     }
 
 
@@ -40,6 +45,7 @@ init =
     ( { bookTitle = ""
       , authorInput = NewAuthorName ""
       , createBookResponse = RemoteData.NotAsked
+      , findAuthorsResponse = RemoteData.NotAsked
       }
     , Cmd.none
     )
@@ -57,6 +63,16 @@ type Msg
     | CancelClicked
     | SubmitClicked
     | GotCreationResponse (GraphqlResponse String)
+
+
+findAuthors : String -> GraphqlTask (List AuthorData)
+findAuthors =
+    Gql.toPattern
+        >> AuthorsRequiredArguments
+        >> (\args -> Query.authors args (SelectionSet.map2 AuthorData Author.id Author.name))
+        >> Graphql.Http.queryRequest Gql.graphqlUrl
+        >> Graphql.Http.toTask
+        >> Task.mapError (Graphql.Http.mapError <| always ())
 
 
 createAuthor : NewAuthor -> GraphqlTask AuthorData
@@ -77,6 +93,24 @@ createBook =
         >> Graphql.Http.toTask
         >> Task.mapError (Graphql.Http.mapError <| always ())
         >> Gql.handleMutationFailure "Book already exists"
+
+
+{-| This is how we compose 2 Tasks to submit related data using different mutations,
+using id of newly created Author (result of 1st mutation) to submit the Book (the 2nd mutataion)
+-}
+submitBook : AuthorInput -> String -> GraphqlTask String
+submitBook authorInput bookTitle =
+    let
+        authorTask =
+            case authorInput of
+                ExistingAuthor authorData ->
+                    Task.succeed authorData
+
+                NewAuthorName authorName ->
+                    createAuthor { name = authorName }
+    in
+    authorTask
+        |> Task.andThen (\authorData -> createBook { title = bookTitle, authorId = authorData.id })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,18 +137,8 @@ update msg model =
             ( model, Cmd.none )
 
         SubmitClicked ->
-            let
-                authorTask =
-                    case model.authorInput of
-                        ExistingAuthor authorData ->
-                            Task.succeed authorData
-
-                        NewAuthorName authorName ->
-                            createAuthor { name = authorName }
-            in
             ( { model | createBookResponse = RemoteData.Loading }
-            , authorTask
-                |> Task.andThen (\authorData -> createBook { title = model.bookTitle, authorId = authorData.id })
+            , submitBook model.authorInput model.bookTitle
                 |> Task.attempt (RemoteData.fromResult >> GotCreationResponse)
             )
 

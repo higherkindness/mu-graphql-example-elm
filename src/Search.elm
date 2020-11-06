@@ -22,10 +22,12 @@ type alias AuthorData =
 
 type alias BookData =
     { title : String
-    , author : AuthorData
+    , authorName : String
     }
 
 
+{-| TODO: use record
+-}
 type alias SearchResults =
     ( List AuthorData, List BookData )
 
@@ -55,32 +57,38 @@ type Msg
     | OpenEditorClicked
 
 
-{-| TODO: get rid of it
+{-| This is a simplest example of how we convert the response to domain types
 -}
 authorSelection : SelectionSet AuthorData Author
 authorSelection =
     SelectionSet.map AuthorData Author.name
 
 
-findAuthors : String -> SelectionSet (List AuthorData) RootQuery
-findAuthors name =
-    Query.authors (AuthorsRequiredArguments <| Gql.toPattern name) authorSelection
-
-
-{-| TODO: get rid of it
+{-| This is a bit more complex example - we unnest response data to convert to our domain types
+Also we can define one SelectionSet in terms of other SelectionSets
 -}
 bookSelection : SelectionSet BookData Book
 bookSelection =
-    SelectionSet.map2 BookData
-        Book.title
-        (Book.author authorSelection)
+    SelectionSet.map2 BookData Book.title (Book.author Author.name)
+
+
+findAuthors : String -> SelectionSet (List AuthorData) RootQuery
+findAuthors =
+    Gql.toPattern
+        >> AuthorsRequiredArguments
+        >> (\args -> Query.authors args authorSelection)
 
 
 findBooks : String -> SelectionSet (List BookData) RootQuery
-findBooks title =
-    Query.books (BooksRequiredArguments <| Gql.toPattern title) bookSelection
+findBooks =
+    Gql.toPattern
+        >> BooksRequiredArguments
+        >> (\args -> Query.books args bookSelection)
 
 
+{-| This is how we can run 2 Queries in 1 HTTP request and combine the results.
+This SelectionSet can still be a part of something greater
+-}
 findAuthorsAndBooks : String -> SelectionSet SearchResults RootQuery
 findAuthorsAndBooks queryStr =
     SelectionSet.map2 Tuple.pair
@@ -129,12 +137,12 @@ showAuthor { name } =
 
 
 showBook : BookData -> Html Msg
-showBook { title, author } =
+showBook { title, authorName } =
     div [ class "book fade-in" ]
         [ div [ class "book__cover" ] []
         , div []
             [ p [ class "book__title" ] [ text title ]
-            , p [ class "book__author" ] [ text <| "by " ++ author.name ]
+            , p [ class "book__author" ] [ text <| "by " ++ authorName ]
             ]
         ]
 
