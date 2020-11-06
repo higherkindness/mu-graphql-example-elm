@@ -8,7 +8,7 @@ import Task exposing (Task)
 
 
 {-| elm-graphql allows also to get some "possibly recovered data",
-but we don't care, that's why we have a Unit type as a parameter to Error
+but we don't care, that's why we have a Unit type as a parameter to Error.
 -}
 type alias GraphqlResponse a =
     RemoteData (Http.Error ()) a
@@ -19,7 +19,7 @@ type alias GraphqlTask t =
 
 
 {-| GraphQL endpoint url.
-Ideally, in real apps it should be passed to the App as a flag
+Ideally, in real apps, it should be passed to the App as a flag
 -}
 graphqlUrl : String
 graphqlUrl =
@@ -30,7 +30,7 @@ graphqlUrl =
 Though not expressed in graphql schema,
 the search string is actually expected to be a pattern for an SQL database
 (this design choice is less obvious for API users, but more flexible).
-"%" means "anything", so we search for specified string with anything before and after it.
+"%" means "anything", so we search for a specified string with anything before and after it.
 -}
 toPattern : String -> String
 toPattern str =
@@ -38,9 +38,9 @@ toPattern str =
 
 
 {-| The `library` example from `mu-haskell` returns HTTP 200 with no data if mutation fails.
-It does not reject an HTTP request, and does not provide any error info.
-It was a server implementation decision, so we should deal with it at the client side.
-If server implementation will change, this function will go away
+It does not reject an HTTP request and does not provide any error info.
+It was a server implementation decision, so we should deal with it at the client-side.
+If server implementation will change, this function will go away.
 -}
 handleMutationFailure : String -> GraphqlTask (Maybe a) -> GraphqlTask a
 handleMutationFailure errMessage =
@@ -69,9 +69,7 @@ handleMutationFailure errMessage =
         >> Task.andThen (Maybe.map Task.succeed >> Maybe.withDefault (Task.fail err))
 
 
-{-| Show error message
-elm-graphql allows also to get some "possibly recovered data",
-but we don't care, that's why we have a Unit type as a parameter to Error
+{-| Show error message from GraphqlResponse
 -}
 showError : Http.Error () -> String
 showError err =

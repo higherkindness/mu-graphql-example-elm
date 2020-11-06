@@ -28,7 +28,7 @@ type alias AuthorData =
 
 
 type AuthorInput
-    = NewAuthorName String (GraphqlResponse (List AuthorData))
+    = NewAuthorByName String (GraphqlResponse (List AuthorData))
     | ExistingAuthor AuthorData
 
 
@@ -42,7 +42,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { bookTitle = ""
-      , authorInput = NewAuthorName "" RemoteData.NotAsked
+      , authorInput = NewAuthorByName "" RemoteData.NotAsked
       , createBookResponse = RemoteData.NotAsked
       }
     , Cmd.none
@@ -95,7 +95,7 @@ createBook =
 
 
 {-| This is how we compose 2 Tasks to submit related data using different mutations,
-using id of newly created Author (result of 1st mutation) to submit the Book (the 2nd mutataion)
+using id of newly created Author (result of 1st mutation) to submit the Book (the 2nd mutation).
 -}
 submitBook : AuthorInput -> String -> GraphqlTask String
 submitBook authorInput bookTitle =
@@ -105,7 +105,7 @@ submitBook authorInput bookTitle =
                 ExistingAuthor authorData ->
                     Task.succeed authorData
 
-                NewAuthorName authorName _ ->
+                NewAuthorByName authorName _ ->
                     createAuthor { name = String.trim authorName }
     in
     authorTask
@@ -116,17 +116,30 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         BookTitleChanged newTitle ->
-            ( { model | bookTitle = newTitle }, Cmd.none )
+            ( { model
+                | bookTitle = newTitle
+                , createBookResponse = RemoteData.NotAsked
+              }
+            , Cmd.none
+            )
 
         AuthorNameChanged newName ->
             case model.authorInput of
-                NewAuthorName _ _ ->
+                NewAuthorByName _ _ ->
                     case String.trim newName of
                         "" ->
-                            ( { model | authorInput = NewAuthorName "" RemoteData.NotAsked }, Cmd.none )
+                            ( { model
+                                | authorInput = NewAuthorByName "" RemoteData.NotAsked
+                                , createBookResponse = RemoteData.NotAsked
+                              }
+                            , Cmd.none
+                            )
 
                         trimmedStr ->
-                            ( { model | authorInput = NewAuthorName newName RemoteData.Loading }
+                            ( { model
+                                | authorInput = NewAuthorByName newName RemoteData.Loading
+                                , createBookResponse = RemoteData.NotAsked
+                              }
                             , findAuthors trimmedStr
                                 |> Task.attempt (RemoteData.fromResult >> GotAuthorsResponse)
                             )
@@ -138,7 +151,12 @@ update msg model =
             ( { model | authorInput = ExistingAuthor authorData }, Cmd.none )
 
         DeselectAuthorClicked ->
-            ( { model | authorInput = NewAuthorName "" RemoteData.NotAsked }, Cmd.none )
+            ( { model
+                | authorInput = NewAuthorByName "" RemoteData.NotAsked
+                , createBookResponse = RemoteData.NotAsked
+              }
+            , Cmd.none
+            )
 
         SubmitClicked ->
             ( { model | createBookResponse = RemoteData.Loading }
@@ -154,8 +172,8 @@ update msg model =
 
         GotAuthorsResponse res ->
             case model.authorInput of
-                NewAuthorName authorName _ ->
-                    ( { model | authorInput = NewAuthorName authorName res }, Cmd.none )
+                NewAuthorByName authorName _ ->
+                    ( { model | authorInput = NewAuthorByName authorName res }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -201,8 +219,8 @@ showAuthorsResponse data =
 authorNameInput : Bool -> Model -> Html Msg
 authorNameInput isSubmitting model =
     case model.authorInput of
-        NewAuthorName str authorsResponse ->
-            div []
+        NewAuthorByName str authorsResponse ->
+            div [ class "author-input__container" ]
                 [ label [ for "author-name-input" ]
                     [ text "Author name"
                     , input
@@ -219,9 +237,12 @@ authorNameInput isSubmitting model =
                 ]
 
         ExistingAuthor authorData ->
-            div [ class "existing-author" ]
-                [ text <| "Author: " ++ authorData.name
-                , button [ onClick DeselectAuthorClicked ] [ text "Deselect" ]
+            div [ class "author-input__container" ]
+                [ text "Author"
+                , div [ class "existing-author" ]
+                    [ text authorData.name
+                    , button [ onClick DeselectAuthorClicked ] [ text "Deselect" ]
+                    ]
                 ]
 
 
@@ -243,13 +264,29 @@ view ({ authorInput, createBookResponse, bookTitle } as model) =
     let
         isSubmitting =
             createBookResponse == RemoteData.Loading
+
+        isValidBookInput =
+            case authorInput of
+                NewAuthorByName authorName _ ->
+                    String.trim authorName /= "" && String.trim bookTitle /= ""
+
+                ExistingAuthor _ ->
+                    String.trim bookTitle /= ""
+
+        buttonText =
+            case model.authorInput of
+                NewAuthorByName _ _ ->
+                    "Submit book and author"
+
+                ExistingAuthor _ ->
+                    "Submit a book"
     in
     div []
         [ bookTitleInput isSubmitting bookTitle
         , authorNameInput isSubmitting model
-        , div []
+        , div [ class "editor__buttons" ]
             [ button [ onClick CancelClicked ] [ text "Cancel" ]
-            , button [ onClick SubmitClicked, disabled isSubmitting ] [ text "Submit a book" ]
+            , button [ onClick SubmitClicked, disabled (isSubmitting || not isValidBookInput) ] [ text buttonText ]
             ]
         , showCreateBookResponse createBookResponse
         ]

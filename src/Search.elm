@@ -57,7 +57,7 @@ type Msg
     | OpenEditorClicked
 
 
-{-| This is a simplest example of how we convert the response to domain types
+{-| That's the simplest example of how we convert the response to domain types.
 -}
 authorSelection : SelectionSet AuthorData Author
 authorSelection =
@@ -65,7 +65,7 @@ authorSelection =
 
 
 {-| This is a bit more complex example - we unnest response data to convert to our domain types
-Also we can define one SelectionSet in terms of other SelectionSets
+Also, we can define one SelectionSet in terms of other SelectionSets.
 -}
 bookSelection : SelectionSet BookData Book
 bookSelection =
@@ -88,8 +88,8 @@ findBooks =
         >> (\args -> Query.books args bookSelection)
 
 
-{-| This is how we can run 2 Queries in 1 HTTP request, combining their results to a SearchResults record.
-This SelectionSet can still become a part of something even greater
+{-| That's how we can run 2 Queries in 1 HTTP request, combining their results to a SearchResults record.
+This SelectionSet can still become a part of something greater.
 -}
 findAuthorsAndBooks : String -> SelectionSet SearchResults RootQuery
 findAuthorsAndBooks queryStr =

@@ -193,11 +193,29 @@ button:disabled {
 
 /* Editor page */
 
-.existing-author {
+.author-input__container {
+  display: flex;
+  flex-direction: column;
+  height: 240px;
   margin-bottom: 16px;
+}
+
+.author-input__container .search-results {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.existing-author {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
 }
 
 .existing-author button {
   margin-left: 10px;
-  background-color: var(--main-color-60);
+}
+
+.editor__buttons {
+  display: flex;
+  justify-content: space-between;
 }

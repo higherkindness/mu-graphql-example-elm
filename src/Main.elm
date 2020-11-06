@@ -43,7 +43,7 @@ type Msg
 
 
 {-| This update function delegates its work to each page's update functions.
-However, in real apps routing should be implemented in a different way.
+However, in real apps routing should be implemented differently.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update wrappedMsg wrappedModel =
