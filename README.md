@@ -4,6 +4,8 @@
 
 ![preview]
 
+This Elm example aims to demonstrate how to implement both frontend and backend in a schema-first, typesafe, and functional way.
+
 To run this example, you need to run the [Mu-Haskell] GraphQL server example (with [Stack]):
 
 ```sh
