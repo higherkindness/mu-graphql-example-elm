@@ -28,7 +28,7 @@ type alias AuthorData =
 
 
 type AuthorInput
-    = NewAuthorName String
+    = NewAuthorName String (GraphqlResponse (List AuthorData))
     | ExistingAuthor AuthorData
 
 
@@ -36,16 +36,14 @@ type alias Model =
     { bookTitle : String
     , authorInput : AuthorInput
     , createBookResponse : GraphqlResponse String
-    , findAuthorsResponse : GraphqlResponse (List AuthorData)
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { bookTitle = ""
-      , authorInput = NewAuthorName ""
+      , authorInput = NewAuthorName "" RemoteData.NotAsked
       , createBookResponse = RemoteData.NotAsked
-      , findAuthorsResponse = RemoteData.NotAsked
       }
     , Cmd.none
     )
@@ -58,6 +56,7 @@ init =
 type Msg
     = BookTitleChanged String
     | AuthorNameChanged String
+    | GotAuthorsResponse (GraphqlResponse (List AuthorData))
     | SelectAuthorClicked AuthorData
     | DeselectAuthorClicked
     | CancelClicked
@@ -106,8 +105,8 @@ submitBook authorInput bookTitle =
                 ExistingAuthor authorData ->
                     Task.succeed authorData
 
-                NewAuthorName authorName ->
-                    createAuthor { name = authorName }
+                NewAuthorName authorName _ ->
+                    createAuthor { name = String.trim authorName }
     in
     authorTask
         |> Task.andThen (\authorData -> createBook { title = bookTitle, authorId = authorData.id })
@@ -121,29 +120,45 @@ update msg model =
 
         AuthorNameChanged newName ->
             case model.authorInput of
-                NewAuthorName _ ->
-                    ( { model | authorInput = NewAuthorName newName }, Cmd.none )
+                NewAuthorName _ _ ->
+                    case String.trim newName of
+                        "" ->
+                            ( { model | authorInput = NewAuthorName "" RemoteData.NotAsked }, Cmd.none )
 
-                _ ->
+                        trimmedStr ->
+                            ( { model | authorInput = NewAuthorName newName RemoteData.Loading }
+                            , findAuthors trimmedStr
+                                |> Task.attempt (RemoteData.fromResult >> GotAuthorsResponse)
+                            )
+
+                ExistingAuthor _ ->
                     ( model, Cmd.none )
 
         SelectAuthorClicked authorData ->
             ( { model | authorInput = ExistingAuthor authorData }, Cmd.none )
 
         DeselectAuthorClicked ->
-            ( { model | authorInput = NewAuthorName "" }, Cmd.none )
-
-        CancelClicked ->
-            ( model, Cmd.none )
+            ( { model | authorInput = NewAuthorName "" RemoteData.NotAsked }, Cmd.none )
 
         SubmitClicked ->
             ( { model | createBookResponse = RemoteData.Loading }
-            , submitBook model.authorInput model.bookTitle
+            , submitBook model.authorInput (String.trim model.bookTitle)
                 |> Task.attempt (RemoteData.fromResult >> GotCreationResponse)
             )
 
         GotCreationResponse res ->
             ( { model | createBookResponse = res }, Cmd.none )
+
+        CancelClicked ->
+            ( model, Cmd.none )
+
+        GotAuthorsResponse res ->
+            case model.authorInput of
+                NewAuthorName authorName _ ->
+                    ( { model | authorInput = NewAuthorName authorName res }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 bookTitleInput : Bool -> String -> Html Msg
@@ -162,21 +177,45 @@ bookTitleInput isSubmitting bookTitle =
         ]
 
 
-authorNameInput : Bool -> AuthorInput -> Html Msg
-authorNameInput isSubmitting authorInput =
-    case authorInput of
-        NewAuthorName str ->
-            label [ for "author-name-input" ]
-                [ text "Author name"
-                , input
-                    [ type_ "text"
-                    , id "author-name-input"
-                    , placeholder ""
-                    , value str
-                    , onInput AuthorNameChanged
-                    , disabled isSubmitting
+showAuthorsResponse : GraphqlResponse (List AuthorData) -> Html Msg
+showAuthorsResponse data =
+    case data of
+        RemoteData.NotAsked ->
+            div [] []
+
+        RemoteData.Loading ->
+            div [] [ p [ class "fade-in-slow" ] [ text ". . ." ] ]
+
+        RemoteData.Failure e ->
+            div [] [ p [ class "error fade-in" ] [ text (Gql.showError e) ] ]
+
+        RemoteData.Success authors ->
+            List.map
+                (\author ->
+                    div [ class "fade-in", onClick (SelectAuthorClicked author) ] [ text author.name ]
+                )
+                authors
+                |> div [ class "search-results fade-in" ]
+
+
+authorNameInput : Model -> Html Msg
+authorNameInput model =
+    case model.authorInput of
+        NewAuthorName str authorsResponse ->
+            div []
+                [ label [ for "author-name-input" ]
+                    [ text "Author name"
+                    , input
+                        [ type_ "text"
+                        , id "author-name-input"
+                        , placeholder ""
+                        , value str
+                        , onInput AuthorNameChanged
+                        , disabled (model.createBookResponse == RemoteData.Loading)
+                        ]
+                        []
                     ]
-                    []
+                , showAuthorsResponse authorsResponse
                 ]
 
         ExistingAuthor authorData ->
@@ -186,8 +225,8 @@ authorNameInput isSubmitting authorInput =
                 ]
 
 
-response : GraphqlResponse a -> Html msg
-response data =
+showCreateBookResponse : GraphqlResponse a -> Html msg
+showCreateBookResponse data =
     case data of
         RemoteData.Loading ->
             div [] [ p [ class "fade-in-slow" ] [ text "Submitting..." ] ]
@@ -200,17 +239,17 @@ response data =
 
 
 view : Model -> Html Msg
-view { authorInput, createBookResponse, bookTitle } =
+view ({ authorInput, createBookResponse, bookTitle } as model) =
     let
         isSubmitting =
             createBookResponse == RemoteData.Loading
     in
     div []
         [ bookTitleInput isSubmitting bookTitle
-        , authorNameInput isSubmitting authorInput
+        , authorNameInput model
         , div []
             [ button [ onClick CancelClicked ] [ text "Cancel" ]
             , button [ onClick SubmitClicked, disabled isSubmitting ] [ text "Submit a book" ]
             ]
-        , response createBookResponse
+        , showCreateBookResponse createBookResponse
         ]

@@ -53,7 +53,7 @@ init =
 
 type Msg
     = QueryChanged String
-    | GotResponse (GraphqlResponse SearchResults)
+    | GotSearchResponse (GraphqlResponse SearchResults)
     | OpenEditorClicked
 
 
@@ -89,7 +89,7 @@ findBooks =
 
 
 {-| This is how we can run 2 Queries in 1 HTTP request, combining their results to a SearchResults record.
-This SelectionSet can still be a part of something greater
+This SelectionSet can still become a part of something even greater
 -}
 findAuthorsAndBooks : String -> SelectionSet SearchResults RootQuery
 findAuthorsAndBooks queryStr =
@@ -114,13 +114,13 @@ update msg model =
                 "" ->
                     ( { model | query = "", searchResponse = RemoteData.NotAsked }, Cmd.none )
 
-                str ->
-                    ( { model | query = str, searchResponse = RemoteData.Loading }
-                    , findAuthorsAndBooksTask str
-                        |> Task.attempt (RemoteData.fromResult >> GotResponse)
+                trimmedStr ->
+                    ( { model | query = queryStr, searchResponse = RemoteData.Loading }
+                    , findAuthorsAndBooksTask trimmedStr
+                        |> Task.attempt (RemoteData.fromResult >> GotSearchResponse)
                     )
 
-        GotResponse res ->
+        GotSearchResponse res ->
             ( { model | searchResponse = res }, Cmd.none )
 
         OpenEditorClicked ->
