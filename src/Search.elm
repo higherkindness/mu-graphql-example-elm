@@ -26,22 +26,22 @@ type alias BookData =
     }
 
 
-{-| TODO: use record
--}
 type alias SearchResults =
-    ( List AuthorData, List BookData )
+    { authors : List AuthorData
+    , books : List BookData
+    }
 
 
 type alias Model =
     { query : String
-    , searchResults : GraphqlResponse SearchResults
+    , searchResponse : GraphqlResponse SearchResults
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { query = ""
-      , searchResults = RemoteData.NotAsked
+      , searchResponse = RemoteData.NotAsked
       }
     , Cmd.none
     )
@@ -69,7 +69,9 @@ Also we can define one SelectionSet in terms of other SelectionSets
 -}
 bookSelection : SelectionSet BookData Book
 bookSelection =
-    SelectionSet.map2 BookData Book.title (Book.author Author.name)
+    SelectionSet.map2 BookData
+        Book.title
+        (Book.author Author.name)
 
 
 findAuthors : String -> SelectionSet (List AuthorData) RootQuery
@@ -86,12 +88,12 @@ findBooks =
         >> (\args -> Query.books args bookSelection)
 
 
-{-| This is how we can run 2 Queries in 1 HTTP request and combine the results.
+{-| This is how we can run 2 Queries in 1 HTTP request, combining their results to a SearchResults record.
 This SelectionSet can still be a part of something greater
 -}
 findAuthorsAndBooks : String -> SelectionSet SearchResults RootQuery
 findAuthorsAndBooks queryStr =
-    SelectionSet.map2 Tuple.pair
+    SelectionSet.map2 SearchResults
         (findAuthors queryStr)
         (findBooks queryStr)
 
@@ -110,18 +112,16 @@ update msg model =
         QueryChanged queryStr ->
             case String.trim queryStr of
                 "" ->
-                    ( { model | query = "", searchResults = RemoteData.NotAsked }
-                    , Cmd.none
-                    )
+                    ( { model | query = "", searchResponse = RemoteData.NotAsked }, Cmd.none )
 
                 str ->
-                    ( { model | query = str, searchResults = RemoteData.Loading }
+                    ( { model | query = str, searchResponse = RemoteData.Loading }
                     , findAuthorsAndBooksTask str
                         |> Task.attempt (RemoteData.fromResult >> GotResponse)
                     )
 
         GotResponse res ->
-            ( { model | searchResults = res }, Cmd.none )
+            ( { model | searchResponse = res }, Cmd.none )
 
         OpenEditorClicked ->
             ( model, Cmd.none )
@@ -147,8 +147,22 @@ showBook { title, authorName } =
         ]
 
 
-showSearchResults : GraphqlResponse SearchResults -> Html Msg
-showSearchResults data =
+showSearchResults : SearchResults -> Html Msg
+showSearchResults { authors, books } =
+    let
+        items =
+            List.map showAuthor authors ++ List.map showBook books
+    in
+    case items of
+        [] ->
+            div [ class "no-results fade-in" ] [ text "Nothing found" ]
+
+        _ ->
+            div [ class "search-results fade-in" ] items
+
+
+showSearchResponse : GraphqlResponse SearchResults -> Html Msg
+showSearchResponse data =
     case data of
         RemoteData.NotAsked ->
             div [] []
@@ -159,12 +173,8 @@ showSearchResults data =
         RemoteData.Failure e ->
             div [] [ p [ class "error fade-in" ] [ text (Gql.showError e) ] ]
 
-        RemoteData.Success ( [], [] ) ->
-            div [ class "no-results fade-in" ] [ text "Nothing found" ]
-
-        RemoteData.Success ( authors, books ) ->
-            (List.map showAuthor authors ++ List.map showBook books)
-                |> div [ class "search-results fade-in" ]
+        RemoteData.Success results ->
+            showSearchResults results
 
 
 view : Model -> Html Msg
@@ -178,5 +188,5 @@ view model =
             , onInput QueryChanged
             ]
             []
-        , showSearchResults model.searchResults
+        , showSearchResponse model.searchResponse
         ]
