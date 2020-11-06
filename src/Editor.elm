@@ -198,8 +198,8 @@ showAuthorsResponse data =
                 |> div [ class "search-results fade-in" ]
 
 
-authorNameInput : Model -> Html Msg
-authorNameInput model =
+authorNameInput : Bool -> Model -> Html Msg
+authorNameInput isSubmitting model =
     case model.authorInput of
         NewAuthorName str authorsResponse ->
             div []
@@ -211,7 +211,7 @@ authorNameInput model =
                         , placeholder ""
                         , value str
                         , onInput AuthorNameChanged
-                        , disabled (model.createBookResponse == RemoteData.Loading)
+                        , disabled isSubmitting
                         ]
                         []
                     ]
@@ -246,7 +246,7 @@ view ({ authorInput, createBookResponse, bookTitle } as model) =
     in
     div []
         [ bookTitleInput isSubmitting bookTitle
-        , authorNameInput model
+        , authorNameInput isSubmitting model
         , div []
             [ button [ onClick CancelClicked ] [ text "Cancel" ]
             , button [ onClick SubmitClicked, disabled isSubmitting ] [ text "Submit a book" ]
