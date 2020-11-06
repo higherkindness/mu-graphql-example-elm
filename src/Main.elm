@@ -5,6 +5,7 @@ import Editor
 import Html exposing (Html, a, button, div, h1, input, p, span, text)
 import Html.Attributes exposing (class, href, placeholder, rel, target, type_, value)
 import Html.Events exposing (onClick, onInput)
+import RemoteData
 import Search
 
 
@@ -61,7 +62,7 @@ update wrappedMsg wrappedModel =
                 |> Tuple.mapBoth SearchPage (Cmd.map SearchMsg)
 
         -- Redirect to Search page and use the book title
-        ( EditorMsg (Editor.SuccessfullyCreated newBookTitle), EditorPage model ) ->
+        ( EditorMsg (Editor.GotCreationResponse (RemoteData.Success newBookTitle)), EditorPage model ) ->
             update
                 (SearchMsg <| Search.QueryChanged newBookTitle)
                 (SearchPage <| Tuple.first Search.init)

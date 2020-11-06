@@ -43,11 +43,8 @@ It was a server implementation decision, so we should deal with it at the client
 If server implementation will change, this function will go away
 -}
 handleMutationFailure : String -> GraphqlTask (Maybe a) -> GraphqlTask a
-handleMutationFailure entityType =
+handleMutationFailure errMessage =
     let
-        errMessage =
-            entityType ++ " was not created (rejected by the server)."
-
         err =
             Http.GraphqlError (Graphql.Http.GraphqlError.ParsedData ())
                 [ { message = errMessage

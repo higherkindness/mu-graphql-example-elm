@@ -57,7 +57,6 @@ type Msg
     | CancelClicked
     | SubmitClicked
     | GotCreationResponse (GraphqlResponse String)
-    | SuccessfullyCreated String
 
 
 createAuthor : NewAuthor -> GraphqlTask AuthorData
@@ -67,7 +66,7 @@ createAuthor =
         >> Graphql.Http.mutationRequest Gql.graphqlUrl
         >> Graphql.Http.toTask
         >> Task.mapError (Graphql.Http.mapError <| always ())
-        >> Gql.handleMutationFailure "Author"
+        >> Gql.handleMutationFailure "Author already exists"
 
 
 createBook : NewBook -> GraphqlTask String
@@ -77,7 +76,7 @@ createBook =
         >> Graphql.Http.mutationRequest Gql.graphqlUrl
         >> Graphql.Http.toTask
         >> Task.mapError (Graphql.Http.mapError <| always ())
-        >> Gql.handleMutationFailure "Book"
+        >> Gql.handleMutationFailure "Book already exists"
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -120,20 +119,7 @@ update msg model =
             )
 
         GotCreationResponse res ->
-            let
-                cmd =
-                    case res of
-                        RemoteData.Success str ->
-                            Task.succeed (SuccessfullyCreated str)
-                                |> Task.perform identity
-
-                        _ ->
-                            Cmd.none
-            in
-            ( { model | createBookResponse = res }, cmd )
-
-        SuccessfullyCreated _ ->
-            ( model, Cmd.none )
+            ( { model | createBookResponse = res }, Cmd.none )
 
 
 bookTitleInput : Bool -> String -> Html Msg
@@ -179,9 +165,6 @@ authorNameInput isSubmitting authorInput =
 response : GraphqlResponse a -> Html msg
 response data =
     case data of
-        RemoteData.Success _ ->
-            div [] [ p [ class "fade-in" ] [ text "Created successfully" ] ]
-
         RemoteData.Loading ->
             div [] [ p [ class "fade-in-slow" ] [ text "Submitting..." ] ]
 
