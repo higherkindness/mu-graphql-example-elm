@@ -12,6 +12,6 @@
     "@dillonkearns/elm-graphql": "^4.0.3"
   },
   "devDependencies": {
-    "create-elm-app": "^5.6.0"
+    "create-elm-app": "^5.11.0"
   }
 }

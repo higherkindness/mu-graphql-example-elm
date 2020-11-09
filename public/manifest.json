@@ -1,6 +1,6 @@
 {
-  "short_name": "Elm App",
-  "name": "Create Elm App Sample",
+  "short_name": "Library example",
+  "name": "Library example",
   "icons": [
     {
       "src": "favicon.ico",
