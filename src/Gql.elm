@@ -1,67 +1,61 @@
 module Gql exposing (..)
 
-import Graphql.Http
-import Graphql.Operation exposing (RootMutation, RootQuery)
-import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
-import LibraryApi.InputObject exposing (NewAuthor)
-import LibraryApi.Mutation as Mutation exposing (NewAuthorRequiredArguments)
-import LibraryApi.Object exposing (Author, Book)
-import LibraryApi.Object.Author as Author
-import LibraryApi.Object.Book as Book
-import LibraryApi.Query as Query exposing (AuthorsRequiredArguments, BooksRequiredArguments)
+import Dict
+import Graphql.Http as Http
+import Graphql.Http.GraphqlError
+import RemoteData exposing (RemoteData(..))
 import Task exposing (Task)
 
 
+{-| elm-graphql allows also to get some "possibly recovered data",
+but we don't care, that's why we have a Unit type as a parameter to Error.
+-}
+type alias GraphqlResponse a =
+    RemoteData (Http.Error ()) a
+
+
+type alias GraphqlTask t =
+    Task (Http.Error ()) t
+
+
+{-| GraphQL endpoint url.
+Ideally, in real apps, it should be passed to the App as a flag
+-}
 graphqlUrl : String
 graphqlUrl =
     "http://localhost:8000"
 
 
-type alias AuthorData =
-    { name : String }
+{-| Helper function for search queries.
+Though not expressed in graphql schema,
+the search string is actually expected to be a pattern for an SQL database
+(this design choice is less obvious for API users, but more flexible).
+"%" means "anything", so we search for a specified string with anything before and after it.
+-}
+toPattern : String -> String
+toPattern str =
+    "%" ++ str ++ "%"
 
 
-type alias GraphqlTask t =
-    Task (Graphql.Http.Error ()) t
+{-| Show error message from GraphqlResponse
+-}
+showError : Http.Error () -> String
+showError err =
+    case err of
+        Http.HttpError Http.NetworkError ->
+            "Network error"
 
+        Http.HttpError (Http.BadUrl _) ->
+            "BadUrl"
 
-authorSelection : SelectionSet AuthorData Author
-authorSelection =
-    SelectionSet.map AuthorData Author.name
+        Http.HttpError Http.Timeout ->
+            "Timeout"
 
+        Http.HttpError (Http.BadStatus _ _) ->
+            "BadStatus"
 
-findAuthors : String -> GraphqlTask (List AuthorData)
-findAuthors name =
-    Query.authors (AuthorsRequiredArguments name) authorSelection
-        |> Graphql.Http.queryRequest graphqlUrl
-        |> Graphql.Http.toTask
-        |> Task.mapError (Graphql.Http.mapError <| always ())
+        Http.HttpError (Http.BadPayload _) ->
+            "BadStatus"
 
-
-type alias BookData =
-    { title : String
-    , author : AuthorData
-    }
-
-
-bookSelection : SelectionSet BookData Book
-bookSelection =
-    SelectionSet.map2 BookData Book.title <| Book.author authorSelection
-
-
-findBooks : String -> GraphqlTask (List BookData)
-findBooks title =
-    Query.books (BooksRequiredArguments title) bookSelection
-        |> Graphql.Http.queryRequest graphqlUrl
-        |> Graphql.Http.toTask
-        |> Task.mapError (Graphql.Http.mapError <| always ())
-
-
-findAuthorsAndBooks : String -> GraphqlTask ( List AuthorData, List BookData )
-findAuthorsAndBooks queryStr =
-    findAuthors queryStr
-        |> Task.andThen
-            (\authors ->
-                findBooks queryStr
-                    |> Task.map (\books -> ( authors, books ))
-            )
+        Http.GraphqlError _ graphqlErrors ->
+            List.map (\e -> e.message) graphqlErrors |> String.join ", "
