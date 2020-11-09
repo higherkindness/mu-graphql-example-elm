@@ -81,7 +81,6 @@ createAuthor =
         >> Graphql.Http.mutationRequest Gql.graphqlUrl
         >> Graphql.Http.toTask
         >> Task.mapError (Graphql.Http.mapError <| always ())
-        >> Gql.handleMutationFailure "Author already exists"
 
 
 createBook : NewBook -> GraphqlTask String
@@ -91,7 +90,6 @@ createBook =
         >> Graphql.Http.mutationRequest Gql.graphqlUrl
         >> Graphql.Http.toTask
         >> Task.mapError (Graphql.Http.mapError <| always ())
-        >> Gql.handleMutationFailure "Book already exists"
 
 
 {-| This is how we compose 2 Tasks to submit related data using different mutations,
