@@ -2,27 +2,19 @@
   height: inherit;
 }
 
-/* Variables */
-
 :root {
   --main-color-100: rgba(0, 30, 56, 1);
   --main-color-60: rgba(0, 30, 56, 0.6);
   --main-color-40: rgba(0, 30, 56, 0.4);
   --main-color-30: rgba(0, 30, 56, 0.3);
-  --main-color-20: rgba(0, 30, 56, 0.2);
   --main-color-10: rgba(0, 30, 56, 0.1);
   --main-color-03: rgba(0, 30, 56, 0.03);
-
   --white-100: rgba(255, 255, 255, 1);
   --white-80: rgba(255, 255, 255, 0.8);
-
   --accent-color-100: rgba(120, 40, 108, 1);
-
   --error-color-100: #f44336;
-
   --contrast-background-color-100: rgba(0, 41, 76, 1);
   --contrast-background-color-80: rgba(0, 41, 76, 0.8);
-
   --quick: 0.3s;
   --slow: 1s;
   --smooth: cubic-bezier(0.28, 0.11, 0.32, 1);
@@ -172,13 +164,14 @@ button:disabled {
 }
 
 .book__cover {
-  width: 44px;
-  height: 67px;
   flex-grow: 0;
   flex-shrink: 0;
-  border-radius: 3px;
-  background-color: var(--main-color-20);
   margin-right: 12px;
+}
+
+.book__cover img {
+  width: 44px;
+  height: 67px;
 }
 
 .book__title {
