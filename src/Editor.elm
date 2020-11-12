@@ -34,6 +34,7 @@ type AuthorInput
 
 type alias Model =
     { bookTitle : String
+    , bookImage : String
     , authorInput : AuthorInput
     , createBookResponse : GraphqlResponse String
     }
@@ -41,12 +42,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { bookTitle = ""
-      , authorInput = NewAuthorByName "" RemoteData.NotAsked
-      , createBookResponse = RemoteData.NotAsked
-      }
-    , Cmd.none
-    )
+    ( Model "" "" (NewAuthorByName "" RemoteData.NotAsked) RemoteData.NotAsked, Cmd.none )
 
 
 
@@ -55,6 +51,7 @@ init =
 
 type Msg
     = BookTitleChanged String
+    | BookImageChanged String
     | AuthorNameChanged String
     | GotAuthorsResponse (GraphqlResponse (List AuthorData))
     | SelectAuthorClicked AuthorData
@@ -95,8 +92,8 @@ createBook =
 {-| This is how we compose 2 Tasks to submit related data using different mutations,
 using id of newly created Author (result of 1st mutation) to submit the Book (the 2nd mutation).
 -}
-submitBook : AuthorInput -> String -> GraphqlTask String
-submitBook authorInput bookTitle =
+submitBook : AuthorInput -> String -> String -> GraphqlTask String
+submitBook authorInput bookTitle bookCover =
     let
         authorTask =
             case authorInput of
@@ -107,7 +104,7 @@ submitBook authorInput bookTitle =
                     createAuthor { name = String.trim authorName }
     in
     authorTask
-        |> Task.andThen (\authorData -> createBook { title = bookTitle, authorId = authorData.id })
+        |> Task.andThen (\{ id } -> createBook { title = bookTitle, authorId = id, imageUrl = bookCover })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -120,6 +117,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        BookImageChanged newCover ->
+            ( { model | bookImage = newCover }, Cmd.none )
 
         AuthorNameChanged newName ->
             case model.authorInput of
@@ -158,7 +158,7 @@ update msg model =
 
         SubmitClicked ->
             ( { model | createBookResponse = RemoteData.Loading }
-            , submitBook model.authorInput (String.trim model.bookTitle)
+            , submitBook model.authorInput (String.trim model.bookTitle) (String.trim model.bookImage)
                 |> Task.attempt (RemoteData.fromResult >> GotCreationResponse)
             )
 
@@ -187,6 +187,22 @@ bookTitleInput isSubmitting bookTitle =
             , placeholder ""
             , value bookTitle
             , onInput BookTitleChanged
+            , disabled isSubmitting
+            ]
+            []
+        ]
+
+
+bookImageInput : Bool -> String -> Html Msg
+bookImageInput isSubmitting bookImage =
+    label [ for "book-image-input" ]
+        [ text "Book cover"
+        , input
+            [ type_ "text"
+            , id "book-image-input"
+            , placeholder ""
+            , value bookImage
+            , onInput BookImageChanged
             , disabled isSubmitting
             ]
             []
@@ -258,7 +274,7 @@ showCreateBookResponse data =
 
 
 view : Model -> Html Msg
-view ({ authorInput, createBookResponse, bookTitle } as model) =
+view ({ authorInput, createBookResponse, bookTitle, bookImage } as model) =
     let
         isSubmitting =
             createBookResponse == RemoteData.Loading
@@ -281,6 +297,7 @@ view ({ authorInput, createBookResponse, bookTitle } as model) =
     in
     div []
         [ bookTitleInput isSubmitting bookTitle
+        , bookImageInput isSubmitting bookImage
         , authorNameInput isSubmitting model
         , div [ class "editor__buttons" ]
             [ button [ onClick CancelClicked ] [ text "Cancel" ]

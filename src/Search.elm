@@ -4,8 +4,8 @@ import Gql exposing (GraphqlResponse, GraphqlTask)
 import Graphql.Http
 import Graphql.Operation exposing (RootMutation, RootQuery)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
-import Html exposing (Html, a, button, div, h1, input, p, span, text)
-import Html.Attributes exposing (class, href, placeholder, rel, target, type_, value)
+import Html exposing (Html, a, button, div, h1, img, input, p, span, text)
+import Html.Attributes exposing (class, href, placeholder, rel, src, target, type_, value)
 import Html.Events exposing (onClick, onInput)
 import LibraryApi.Object exposing (Author, Book)
 import LibraryApi.Object.Author as Author
@@ -22,6 +22,7 @@ type alias AuthorData =
 
 type alias BookData =
     { title : String
+    , imageUrl : String
     , authorName : String
     }
 
@@ -40,15 +41,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { query = ""
-      , searchResponse = RemoteData.NotAsked
-      }
-    , Cmd.none
-    )
-
-
-
--- update and Tasks
+    ( Model "" RemoteData.NotAsked, Cmd.none )
 
 
 type Msg
@@ -69,8 +62,9 @@ Also, we can define one SelectionSet in terms of other SelectionSets.
 -}
 bookSelection : SelectionSet BookData Book
 bookSelection =
-    SelectionSet.map2 BookData
+    SelectionSet.map3 BookData
         Book.title
+        Book.imageUrl
         (Book.author Author.name)
 
 
@@ -137,9 +131,9 @@ showAuthor { name } =
 
 
 showBook : BookData -> Html Msg
-showBook { title, authorName } =
+showBook { title, authorName, imageUrl } =
     div [ class "book fade-in" ]
-        [ div [ class "book__cover" ] []
+        [ div [ class "book__cover" ] [ img [ src imageUrl ] [] ]
         , div []
             [ p [ class "book__title" ] [ text title ]
             , p [ class "book__author" ] [ text <| "by " ++ authorName ]
