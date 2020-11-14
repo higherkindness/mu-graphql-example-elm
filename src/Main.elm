@@ -5,6 +5,7 @@ import Editor
 import Html exposing (Html, a, button, div, h1, input, p, span, text)
 import Html.Attributes exposing (class, href, placeholder, rel, target, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Decode as Decode
 import RemoteData
 import Search
 
@@ -15,7 +16,7 @@ main =
         { init = always init
         , view = view
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = Sub.map SearchMsg << Search.subscriptions
         }
 
 
@@ -48,6 +49,7 @@ However, in real apps routing should be implemented differently.
 update : Msg -> Model -> ( Model, Cmd Msg )
 update wrappedMsg wrappedModel =
     case ( wrappedMsg, wrappedModel ) of
+        -- Redirect to Editor page without additional actions
         ( SearchMsg Search.OpenEditorClicked, SearchPage model ) ->
             Editor.init
                 |> Tuple.mapBoth EditorPage (Cmd.map EditorMsg)

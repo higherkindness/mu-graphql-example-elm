@@ -1,16 +1,19 @@
-module Search exposing (Model, Msg(..), init, update, view)
+port module Search exposing (Model, Msg(..), init, subscriptions, update, view)
 
 import Gql exposing (GraphqlResponse, GraphqlTask)
+import Graphql.Document
 import Graphql.Http
-import Graphql.Operation exposing (RootMutation, RootQuery)
+import Graphql.Operation exposing (RootMutation, RootQuery, RootSubscription)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Html exposing (Html, a, button, div, h1, img, input, p, span, text)
-import Html.Attributes exposing (class, href, placeholder, rel, src, target, type_, value)
+import Html.Attributes exposing (class, disabled, href, placeholder, rel, src, target, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Decode as Decode
 import LibraryApi.Object exposing (Author, Book)
 import LibraryApi.Object.Author as Author
 import LibraryApi.Object.Book as Book
 import LibraryApi.Query as Query exposing (AuthorsRequiredArguments, BooksRequiredArguments)
+import LibraryApi.Subscription as Subscription
 import RemoteData
 import Task exposing (Task)
 
@@ -36,18 +39,49 @@ type alias SearchResults =
 type alias Model =
     { query : String
     , searchResponse : GraphqlResponse SearchResults
+    , isSubscribed : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "" RemoteData.NotAsked, Cmd.none )
+    ( { query = ""
+      , searchResponse = RemoteData.NotAsked
+      , isSubscribed = False
+      }
+    , Cmd.none
+    )
 
 
 type Msg
     = QueryChanged String
     | GotSearchResponse (GraphqlResponse SearchResults)
     | OpenEditorClicked
+    | SubscribeToBooks
+    | GotSubscriptionData String
+
+
+{-| Allows to map different subscriptions to different Msg
+-}
+subscriptions : model -> Sub Msg
+subscriptions _ =
+    gotSubscriptionData GotSubscriptionData
+
+
+port subscribeToAllBooks : String -> Cmd msg
+
+
+{-| should be (Json.Decode.Value -> msg) -> Sub msg
+to compose with gql
+-}
+port gotSubscriptionData : (String -> msg) -> Sub msg
+
+
+{-| hope it works at least for outgoing
+-}
+subscriptionDocument : SelectionSet BookData RootSubscription
+subscriptionDocument =
+    Subscription.allBooks bookSelection
 
 
 {-| That's the simplest example of how we convert the response to domain types.
@@ -66,6 +100,17 @@ bookSelection =
         Book.title
         Book.imageUrl
         (Book.author Author.name)
+
+
+{-| TODO: remove me
+I am a dumb decoder substitution for bookSelection.
+-}
+tempBookDecoder : Decode.Decoder BookData
+tempBookDecoder =
+    Decode.map3 BookData
+        (Decode.field "title" Decode.string)
+        (Decode.field "imageUrl" Decode.string)
+        (Decode.succeed "Temp Author Name")
 
 
 findAuthors : String -> SelectionSet (List AuthorData) RootQuery
@@ -119,6 +164,36 @@ update msg model =
 
         OpenEditorClicked ->
             ( model, Cmd.none )
+
+        SubscribeToBooks ->
+            ( { model | isSubscribed = True, searchResponse = RemoteData.Loading }
+            , subscribeToAllBooks (Graphql.Document.serializeSubscription subscriptionDocument)
+            )
+
+        GotSubscriptionData websocketString ->
+            let
+                stringDecoder =
+                    Decode.field "payload" <| Decode.field "data" <| tempBookDecoder
+
+                -- TODO: Decode.field "payload" <| Decode.field "data" <| Graphql.Document.decoder bookSelection
+            in
+            case Decode.decodeString stringDecoder websocketString of
+                Ok bookData ->
+                    let
+                        searchResponse =
+                            case model.searchResponse of
+                                RemoteData.Success success ->
+                                    RemoteData.Success { success | books = bookData :: success.books }
+
+                                _ ->
+                                    RemoteData.Success { authors = [], books = [ bookData ] }
+                    in
+                    ( { model | query = bookData.title, searchResponse = searchResponse }
+                    , Cmd.none
+                    )
+
+                Err error ->
+                    ( model, Cmd.none )
 
 
 
@@ -175,6 +250,8 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick OpenEditorClicked ] [ text "Add a book" ]
+        , button [ onClick SubscribeToBooks, disabled model.isSubscribed ]
+            [ text "Try subscriptions" ]
         , input
             [ type_ "text"
             , placeholder "For example, Kant"
