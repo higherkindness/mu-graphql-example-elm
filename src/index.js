@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
       socket.onmessage = (event) => {
         // event.data is a JSON string.
         // It's safer to decode JSON in Elm, but requires ingoring irrelevant messages in Elm.
-        // We choose safety here, but we also can filter (which means decode) messages in JS-side
+        // We choose safety here, but we could also decode and filter messages in JS-side instead
         app.ports.subscriptionDataReceiver.send(event.data);
       };
     }
