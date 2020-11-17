@@ -8,7 +8,7 @@ import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Html exposing (Html, a, button, div, h1, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, href, placeholder, rel, src, target, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder, decodeString)
 import LibraryApi.Object exposing (Author, Book)
 import LibraryApi.Object.Author as Author
 import LibraryApi.Object.Book as Book
@@ -36,6 +36,14 @@ type alias SearchResults =
     }
 
 
+{-| We call it "Data" instead of "Message" to distinguish from messages in the Elm Architecture
+-}
+type SubscriptionData
+    = GotBookData BookData
+    | TransferComplete
+    | IrrelevantData
+
+
 type alias Model =
     { query : String
     , searchResponse : GraphqlResponse SearchResults
@@ -58,30 +66,23 @@ type Msg
     | GotSearchResponse (GraphqlResponse SearchResults)
     | OpenEditorClicked
     | SubscribeToBooks
-    | GotSubscriptionData String
+    | GotSubscriptionData SubscriptionData
 
 
 {-| Allows to map different subscriptions to different Msg
 -}
 subscriptions : model -> Sub Msg
 subscriptions _ =
-    gotSubscriptionData GotSubscriptionData
+    subscriptionDataReceiver (subscriptionDataDecoder >> GotSubscriptionData)
 
 
 port subscribeToAllBooks : String -> Cmd msg
 
 
-{-| should be (Json.Decode.Value -> msg) -> Sub msg
-to compose with gql
--}
-port gotSubscriptionData : (String -> msg) -> Sub msg
+port unsubscribe : () -> Cmd msg
 
 
-{-| hope it works at least for outgoing
--}
-subscriptionDocument : SelectionSet BookData RootSubscription
-subscriptionDocument =
-    Subscription.allBooks bookSelection
+port subscriptionDataReceiver : (String -> msg) -> Sub msg
 
 
 {-| That's the simplest example of how we convert the response to domain types.
@@ -100,17 +101,6 @@ bookSelection =
         Book.title
         Book.imageUrl
         (Book.author Author.name)
-
-
-{-| TODO: remove me
-I am a dumb decoder substitution for bookSelection.
--}
-tempBookDecoder : Decode.Decoder BookData
-tempBookDecoder =
-    Decode.map3 BookData
-        (Decode.field "title" Decode.string)
-        (Decode.field "imageUrl" Decode.string)
-        (Decode.succeed "Temp Author Name")
 
 
 findAuthors : String -> SelectionSet (List AuthorData) RootQuery
@@ -145,6 +135,32 @@ findAuthorsAndBooksTask =
         >> Task.mapError (Graphql.Http.mapError <| always ())
 
 
+bookDataDecoder : Decoder SubscriptionData
+bookDataDecoder =
+    Graphql.Document.decoder bookSelection
+        |> Decode.field "payload"
+        |> Decode.map GotBookData
+
+
+transferCompleteDecoder : Decoder SubscriptionData
+transferCompleteDecoder =
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\s ->
+                if s == "complete" then
+                    Decode.succeed TransferComplete
+
+                else
+                    Decode.fail "TransferComplete requires value to be `complete`"
+            )
+
+
+subscriptionDataDecoder : String -> SubscriptionData
+subscriptionDataDecoder str =
+    decodeString (Decode.oneOf [ bookDataDecoder, transferCompleteDecoder ]) str
+        |> Result.withDefault IrrelevantData
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -167,18 +183,14 @@ update msg model =
 
         SubscribeToBooks ->
             ( { model | isSubscribed = True, searchResponse = RemoteData.Loading }
-            , subscribeToAllBooks (Graphql.Document.serializeSubscription subscriptionDocument)
+            , Subscription.allBooks bookSelection
+                |> Graphql.Document.serializeSubscription
+                |> subscribeToAllBooks
             )
 
-        GotSubscriptionData websocketString ->
-            let
-                stringDecoder =
-                    Decode.field "payload" <| Decode.field "data" <| tempBookDecoder
-
-                -- TODO: Decode.field "payload" <| Decode.field "data" <| Graphql.Document.decoder bookSelection
-            in
-            case Decode.decodeString stringDecoder websocketString of
-                Ok bookData ->
+        GotSubscriptionData data ->
+            case data of
+                GotBookData bookData ->
                     let
                         searchResponse =
                             case model.searchResponse of
@@ -188,11 +200,12 @@ update msg model =
                                 _ ->
                                     RemoteData.Success { authors = [], books = [ bookData ] }
                     in
-                    ( { model | query = bookData.title, searchResponse = searchResponse }
-                    , Cmd.none
-                    )
+                    ( { model | searchResponse = searchResponse }, Cmd.none )
 
-                Err error ->
+                TransferComplete ->
+                    ( { model | isSubscribed = False }, unsubscribe () )
+
+                IrrelevantData ->
                     ( model, Cmd.none )
 
 
