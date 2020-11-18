@@ -40,10 +40,8 @@ $ cd frontend && yarn && yarn codegen && yarn start
 ## Other technical notes:
 
 - [elm-graphql] also supports code-generation from introspection files, local schema files, and remote servers with introspection enabled _(it usually is)_.
-- In this particular example, it's better for us to use exactly that schema file, which was used for implementing backend, rather than keeping a duplicate schema in the client repo (in this case someday they will become inconsistent). However, in real applications, it could be great to have both backend and client code located in one repo together with the schema.
 - both [elm-graphql] and [elm-app] can be installed as global dependencies, but we don't consider it a good practice, because it immediately becomes harder to maintain versions.
 - old generated files are removed by [elm-graphql] automatically, we don't need to worry about it.
-- `curl` is not supported on Windows systems, but you can download the schema file manually.
 
   [elm ci]: https://github.com/kutyel/mu-graphql-example-elm/workflows/Elm%20CI/badge.svg
   [preview]: docs/preview.png
