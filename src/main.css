@@ -172,6 +172,9 @@ button:disabled {
 .book__cover img {
   width: 44px;
   height: 67px;
+  object-fit: cover; /* prevent covers from distorting */
+  border-radius: 2px;
+  background-color: var(--main-color-10); /* visible in case of invalid urls or during loading */
 }
 
 .book__title {

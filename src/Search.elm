@@ -1,16 +1,19 @@
-module Search exposing (Model, Msg(..), init, update, view)
+port module Search exposing (Model, Msg(..), init, subscriptions, update, view)
 
 import Gql exposing (GraphqlResponse, GraphqlTask)
+import Graphql.Document
 import Graphql.Http
-import Graphql.Operation exposing (RootMutation, RootQuery)
+import Graphql.Operation exposing (RootMutation, RootQuery, RootSubscription)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Html exposing (Html, a, button, div, h1, img, input, p, span, text)
-import Html.Attributes exposing (class, href, placeholder, rel, src, target, type_, value)
+import Html.Attributes exposing (class, disabled, href, placeholder, rel, src, target, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Decode as Decode exposing (Decoder, decodeString)
 import LibraryApi.Object exposing (Author, Book)
 import LibraryApi.Object.Author as Author
 import LibraryApi.Object.Book as Book
 import LibraryApi.Query as Query exposing (AuthorsRequiredArguments, BooksRequiredArguments)
+import LibraryApi.Subscription as Subscription
 import RemoteData
 import Task exposing (Task)
 
@@ -33,21 +36,53 @@ type alias SearchResults =
     }
 
 
+{-| We call it "Data" instead of "Message" to distinguish from messages in the Elm Architecture
+-}
+type SubscriptionData
+    = GotBookData BookData
+    | TransferComplete
+    | IrrelevantData
+
+
 type alias Model =
     { query : String
     , searchResponse : GraphqlResponse SearchResults
+    , isSubscribed : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "" RemoteData.NotAsked, Cmd.none )
+    ( { query = ""
+      , searchResponse = RemoteData.NotAsked
+      , isSubscribed = False
+      }
+    , Cmd.none
+    )
 
 
 type Msg
     = QueryChanged String
     | GotSearchResponse (GraphqlResponse SearchResults)
     | OpenEditorClicked
+    | SubscribeToBooks
+    | GotSubscriptionData SubscriptionData
+
+
+{-| Allows to map different subscriptions to different Msg
+-}
+subscriptions : model -> Sub Msg
+subscriptions _ =
+    subscriptionDataReceiver (subscriptionDataDecoder >> GotSubscriptionData)
+
+
+port subscribeToAllBooks : String -> Cmd msg
+
+
+port unsubscribe : () -> Cmd msg
+
+
+port subscriptionDataReceiver : (String -> msg) -> Sub msg
 
 
 {-| That's the simplest example of how we convert the response to domain types.
@@ -100,6 +135,32 @@ findAuthorsAndBooksTask =
         >> Task.mapError (Graphql.Http.mapError <| always ())
 
 
+bookDataDecoder : Decoder SubscriptionData
+bookDataDecoder =
+    Graphql.Document.decoder bookSelection
+        |> Decode.field "payload"
+        |> Decode.map GotBookData
+
+
+transferCompleteDecoder : Decoder SubscriptionData
+transferCompleteDecoder =
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\s ->
+                if s == "complete" then
+                    Decode.succeed TransferComplete
+
+                else
+                    Decode.fail "TransferComplete requires value to be `complete`"
+            )
+
+
+subscriptionDataDecoder : String -> SubscriptionData
+subscriptionDataDecoder str =
+    decodeString (Decode.oneOf [ bookDataDecoder, transferCompleteDecoder ]) str
+        |> Result.withDefault IrrelevantData
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -119,6 +180,33 @@ update msg model =
 
         OpenEditorClicked ->
             ( model, Cmd.none )
+
+        SubscribeToBooks ->
+            ( { model | isSubscribed = True, searchResponse = RemoteData.Loading }
+            , Subscription.allBooks bookSelection
+                |> Graphql.Document.serializeSubscription
+                |> subscribeToAllBooks
+            )
+
+        GotSubscriptionData data ->
+            case data of
+                GotBookData bookData ->
+                    let
+                        searchResponse =
+                            case model.searchResponse of
+                                RemoteData.Success success ->
+                                    RemoteData.Success { success | books = bookData :: success.books }
+
+                                _ ->
+                                    RemoteData.Success { authors = [], books = [ bookData ] }
+                    in
+                    ( { model | searchResponse = searchResponse }, Cmd.none )
+
+                TransferComplete ->
+                    ( { model | isSubscribed = False }, unsubscribe () )
+
+                IrrelevantData ->
+                    ( model, Cmd.none )
 
 
 
@@ -175,6 +263,8 @@ view : Model -> Html Msg
 view model =
     div []
         [ button [ onClick OpenEditorClicked ] [ text "Add a book" ]
+        , button [ onClick SubscribeToBooks, disabled model.isSubscribed ]
+            [ text "Try subscriptions" ]
         , input
             [ type_ "text"
             , placeholder "For example, Kant"
