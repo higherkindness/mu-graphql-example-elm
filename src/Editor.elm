@@ -42,7 +42,13 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "" "" (NewAuthorByName "" RemoteData.NotAsked) RemoteData.NotAsked, Cmd.none )
+    ( { bookTitle = ""
+      , bookImage = ""
+      , authorInput = NewAuthorByName "" RemoteData.NotAsked
+      , createBookResponse = RemoteData.NotAsked
+      }
+    , Cmd.none
+    )
 
 
 

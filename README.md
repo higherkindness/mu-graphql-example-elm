@@ -22,17 +22,19 @@ $ npm run codegen
 $ npm start
 ```
 
-## This example demonstrates
+## This example demonstrates how to use:
 
 - [x] Queries
-   - How to combine queries and selection sets (search authors by name and books by title)
-   - How to handle errors and loading state
+   - Combine queries and selection sets (search authors by name and books by title)
+   - Handle errors and loading state
 - [x] Mutations
-   - How to create a new entity related to an existing one (submit a book with an existing author)
-   - How to compose Tasks to create several new entities with relations (submit a book with a new author)
-- [ ] Subscriptions
+   - Create a new entity related to an existing one (submit a book with an existing author)
+   - Compose Tasks to create several new entities with relations (submit a book with a new author)
+- [x] Subscriptions
+   - Subscribe and unsubscribe with GraphQL via Elm ports and WebSocket API
+   - Build GraphQL queries and decode arbitrary JSON strings using the same generated `SelectionSet`s
 
-## This app does not demonstrate:
+## This example does not demonstrate:
 
 - User input ~~validation~~ parsing best practices
 - Routing best practices
