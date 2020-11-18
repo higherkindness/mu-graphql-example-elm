@@ -1,3 +1,5 @@
-result
 .DS_Store
 .pre-commit-config.yaml
+
+# Nix stuff
+result
