@@ -16,6 +16,3 @@ package-lock.json
 
 # Elm-graphql generated code
 src/LibraryApi
-
-# Fetched GraphQL schema
-library.graphql

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Elm client example for our mu-haskell GraphQL server!",
   "scripts": {
-    "codegen": "elm-graphql --schema-file library.graphql --base LibraryApi --output src",
+    "codegen": "elm-graphql --schema-file ../backend/library.graphql --base LibraryApi --output src",
     "start": "elm-app start"
   },
   "author": "higherkindness",
