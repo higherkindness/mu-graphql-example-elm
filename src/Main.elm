@@ -1,18 +1,17 @@
 module Main exposing (main)
 
-import Browser
+import Browser exposing (element)
 import Editor
 import Html exposing (Html, a, button, div, h1, input, p, span, text)
 import Html.Attributes exposing (class, href, placeholder, rel, target, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Json.Decode as Decode
 import RemoteData
 import Search
 
 
 main : Program () Model Msg
 main =
-    Browser.element
+    element
         { init = always init
         , view = view
         , update = update
