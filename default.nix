@@ -1,5 +1,6 @@
-let
-  pkgs = import <nixpkgs> {};
+{ system ? builtins.currentSystem }:
+let 
+  pkgs = import <nixpkgs> { inherit system; };
   nix-pre-commit-hooks = import (builtins.fetchTarball "https://github.com/cachix/pre-commit-hooks.nix/tarball/master");
   gitignoreSrc = pkgs.fetchFromGitHub { 
     owner = "hercules-ci";
