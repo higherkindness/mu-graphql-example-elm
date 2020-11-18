@@ -1,6 +1,5 @@
 module Gql exposing (..)
 
-import Dict
 import Graphql.Http as Http
 import Graphql.Http.GraphqlError
 import RemoteData exposing (RemoteData(..))

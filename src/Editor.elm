@@ -22,9 +22,7 @@ but there is no need in coupling both pages together by a common type.
 Moreover, it's GraphQL's strong side - we can query exactly what we need, no less and no more
 -}
 type alias AuthorData =
-    { id : Int
-    , name : String
-    }
+    { id : Int, name : String }
 
 
 type AuthorInput

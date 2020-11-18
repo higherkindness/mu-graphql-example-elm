@@ -19,8 +19,7 @@ import Task exposing (Task)
 
 
 type alias AuthorData =
-    { name : String
-    }
+    { name : String }
 
 
 type alias BookData =
