@@ -186,4 +186,4 @@ libraryServer conn =
     newAuthor (NewAuthor name) = insertNewEntity ("Author " <> name) (Author name)
 
     newBook :: NewBook -> ServerErrorIO (Entity Book)
-    newBook (NewBook title authorId img) = insertNewEntity ("Book " <> title) $ Book title img $ toSqlKey (fromInteger authorId)
+    newBook (NewBook title authorId img) = insertNewEntity ("Book " <> title) (Book title img . toSqlKey $ fromInteger authorId)
