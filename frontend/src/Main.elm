@@ -90,7 +90,7 @@ heading =
                 [ href "https://higherkindness.io/mu-haskell/"
                 , target "_blank"
                 ]
-                [ text "Mu-Haskell" ]
+                [ text "mu-haskell" ]
             , text " and "
             , a
                 [ href "https://package.elm-lang.org/packages/dillonkearns/elm-graphql/latest/"

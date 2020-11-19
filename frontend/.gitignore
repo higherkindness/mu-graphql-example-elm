@@ -1,0 +1,18 @@
+# Distribution
+build/
+
+# elm-package generated files
+elm-stuff
+
+# elm-repl generated files
+repl-temp-*
+
+# Dependency directories
+node_modules
+package-lock.json
+
+# Desktop Services Store on macOS
+.DS_Store
+
+# Elm-graphql generated code
+src/LibraryApi
