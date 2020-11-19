@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
@@ -173,20 +174,16 @@ libraryServer conn =
       lst <- liftIO $ runDb conn $ selectList [] [Asc BookTitle]
       runConduit $ yieldMany lst .| liftServerConduit sink
 
-    newAuthor :: NewAuthor -> ServerErrorIO (Entity Author)
-    newAuthor (NewAuthor name) = do
+    insertNewEntity :: (PersistEntity a, PersistEntityBackend a ~ SqlBackend) => T.Text -> a -> ServerErrorIO (Entity a)
+    insertNewEntity name new = do
       maybeEntity <- runDb conn $ do
-        let new = Author name
         result <- insertUnique new
         pure $ Entity <$> result <*> pure new
-      let errorMsg = "Author \"" <> T.unpack name <> "\" already exists"
+      let errorMsg = T.unpack name <> "\" already exists"
       maybe (serverError $ ServerError Invalid errorMsg) pure maybeEntity
 
+    newAuthor :: NewAuthor -> ServerErrorIO (Entity Author)
+    newAuthor (NewAuthor name) = insertNewEntity ("Author " <> name) (Author name)
+
     newBook :: NewBook -> ServerErrorIO (Entity Book)
-    newBook (NewBook title authorId img) = do
-      maybeEntity <- runDb conn $ do
-        let new = Book title img (toAuthorId $ fromInteger authorId)
-        result <- insertUnique new
-        pure $ Entity <$> result <*> pure new
-      let errorMsg = "Book \"" <> T.unpack title <> "\" already exists"
-      maybe (serverError $ ServerError Invalid errorMsg) pure maybeEntity
+    newBook (NewBook title authorId img) = insertNewEntity ("Book " <> title) $ Book title img $ toSqlKey (fromInteger authorId)
