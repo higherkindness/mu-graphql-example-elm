@@ -45,7 +45,7 @@ $ cd frontend && yarn && yarn codegen && yarn start
 - old generated files are removed by [elm-graphql] automatically, we don't need to worry about it.
 
   [elm ci]: https://github.com/kutyel/mu-graphql-example-elm/workflows/Elm%20CI/badge.svg
-  [preview]: preview.png
+  [preview]: library.png
   [mu-haskell]: https://github.com/higherkindness/mu-haskell
   [stack]: https://docs.haskellstack.org/en/stable/README/#how-to-install
   [elm-graphql]: https://github.com/dillonkearns/elm-graphql/

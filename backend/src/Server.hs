@@ -66,6 +66,17 @@ insertSeedData conn =
           [ Book "The Neverending Story" "https://m.media-amazon.com/images/I/51AnD2Fki3L.jpg",
             Book "Momo" "https://m.media-amazon.com/images/I/61AuiRa4nmL.jpg"
           ]
+        ),
+        ( Author "Alejandro Serrano",
+          [ Book "Practical Haskell" "https://m.media-amazon.com/images/I/61j3IHmnqvL.jpg",
+            Book "Book of Monads" "https://m.media-amazon.com/images/I/51x-SNjPKjL.jpg"
+          ]
+        ),
+        ( Author "Graham Hutton",
+          [Book "Programming in Haskell" "https://m.media-amazon.com/images/I/61Fo+7epgQL.jpg"]
+        ),
+        ( Author "Chris Allen & Julie Moronuki",
+          [Book "Haskell Programming from First Principles" "https://haskellbook.com/img/book-cover-front.png"]
         )
       ]
 
