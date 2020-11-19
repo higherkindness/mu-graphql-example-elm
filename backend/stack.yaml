@@ -1,11 +1,11 @@
-resolver: lts-16.20
+resolver: lts-16.22
 extra-deps:
   - generic-aeson-0.2.0.11
   - graphql-0.11.0.0
-  - mu-graphql-0.4.0.0
-  - mu-persistent-0.3.0.0
+  - mu-graphql-0.4.1.0
+  - mu-persistent-0.3.1.0
   - mu-prometheus-0.4.0.0
-  - mu-rpc-0.4.0.0
+  - mu-rpc-0.4.0.1
   - mu-schema-0.3.1.1
   - parameterized-0.5.0.0
   - primitive-extras-0.8
@@ -14,6 +14,3 @@ extra-deps:
   - stm-hamt-1.2.0.4
   - stm-lifted-2.5.0.0
   - wai-middleware-prometheus-1.0.0
-  # This will to go away
-  - git: https://github.com/hasura/graphql-parser-hs.git
-    commit: f4a093981ca5626982a17c2bfaad047cc0834a81
