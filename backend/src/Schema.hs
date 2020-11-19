@@ -7,7 +7,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -16,16 +15,9 @@
 
 module Schema where
 
-import Data.Int (Int64)
 import qualified Data.Text as T
-import Database.Persist.Sqlite (BackendKey (SqlBackendKey), toSqlKey)
-import Database.Persist.TH
-  ( mkMigrate,
-    mkPersist,
-    persistLowerCase,
-    share,
-    sqlSettings,
-  )
+import Database.Persist.Sqlite (BackendKey (SqlBackendKey))
+import Database.Persist.TH (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 import GHC.Generics (Generic)
 import Mu.GraphQL.Quasi (graphql)
 import Mu.Schema (FromSchema)
@@ -51,13 +43,16 @@ Book json
   deriving Show Generic
 |]
 
-toAuthorId :: Int64 -> AuthorId
-toAuthorId = toSqlKey
-
-newtype NewAuthor = NewAuthor {name :: T.Text}
+newtype NewAuthor = NewAuthor
+  { name :: T.Text
+  }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromSchema LibrarySchema "NewAuthor")
 
-data NewBook = NewBook {title :: T.Text, authorId :: Integer, imageUrl :: T.Text}
+data NewBook = NewBook
+  { title :: T.Text,
+    authorId :: Integer,
+    imageUrl :: T.Text
+  }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromSchema LibrarySchema "NewBook")
