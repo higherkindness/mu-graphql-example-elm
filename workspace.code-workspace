@@ -11,7 +11,7 @@
       "name": "root"
     }
   ],
-  "settins": {
+  "settings": {
     "[elm]": {
       "editor.formatOnSave": true
     },

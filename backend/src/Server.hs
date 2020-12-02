@@ -10,7 +10,7 @@
 module Main where
 
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, runStderrLoggingT)
+import Control.Monad.Logger (LoggingT, logInfoN, runStderrLoggingT)
 import Data.Conduit (ConduitT, Void, runConduit, (.|))
 import Data.Conduit.Combinators (yieldMany)
 import Data.Maybe (fromJust)
@@ -38,7 +38,7 @@ main = do
     withSqliteConn ":memory:" $ \conn -> do
       runDb conn $ runMigration migrateAll
       insertSeedData conn
-      liftIO $ putStrLn "starting GraphQL server on port 8000"
+      logInfoN "starting GraphQL server on port 8000"
       liftIO $
         run 8000 $
           hm $
