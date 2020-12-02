@@ -1,0 +1,25 @@
+{
+  "folders": [
+    {
+      "path": "backend"
+    },
+    {
+      "path": "frontend"
+    },
+    {
+      "path": ".",
+      "name": "root"
+    }
+  ],
+  "settins": {
+    "[elm]": {
+      "editor.formatOnSave": true
+    },
+    "[haskell]": {
+      "editor.formatOnSave": true
+    }
+  },
+  "extensions": {
+    "recommendations": ["haskell.haskell", "elmtooling.elm-ls-vscode"]
+  }
+}

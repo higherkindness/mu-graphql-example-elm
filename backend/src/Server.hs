@@ -44,9 +44,9 @@ main = do
           hm $
             graphQLApp
               (prometheus p $ libraryServer conn)
-              (Proxy @('Just "Query"))
-              (Proxy @('Just "Mutation"))
-              (Proxy @('Just "Subscription"))
+              (Proxy @( 'Just "Query"))
+              (Proxy @( 'Just "Mutation"))
+              (Proxy @( 'Just "Subscription"))
 
 -- | Inserts demo data to make this example valueable for testing with different clients
 --   Returns Nothing in case of any failure, including attempts to insert non-unique values
