@@ -58,3 +58,5 @@ $ cd frontend && yarn && yarn codegen && yarn start
 You'll need a few things: [stack], [yarn] (npm) (and optionally, [Nix](https://nixos.org/)).
 
 Run `nix-shell` the first time you clone the project, that way you'll have the generated `.pre-commit-config.yaml` git hook! 😉
+
+When using Visual Studio Code, please prefer opening a pre-configured workspace file `workspace.code-workspace`.

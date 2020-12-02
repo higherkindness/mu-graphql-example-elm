@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -22,11 +21,7 @@ import GHC.Generics (Generic)
 import Mu.GraphQL.Quasi (graphql)
 import Mu.Schema (FromSchema)
 
-#if __GHCIDE__
-graphql "Library" "backend/library.graphql"
-#else
-graphql "Library" "library.graphql" -- Let all the magic happen! 🪄🎩
-#endif
+graphql "Library" "library.graphql"
 
 share
   [mkPersist sqlSettings, mkMigrate "migrateAll"]
