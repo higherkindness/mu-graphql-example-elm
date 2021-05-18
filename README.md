@@ -42,7 +42,7 @@ $ cd frontend && yarn && yarn codegen && yarn start
 - [mu-haskell] uses the `schema.graphql` as the single source of truth, using it to generate type level representations of the schema that we can use to implement our server!
 - [elm-graphql] also supports code-generation from introspection files, local schema files, and remote servers with introspection enabled _(it usually is)_.
 - It's usually better to use a single schema file (like in this repo), with both backend and client code located in the same repo (rather than having duplicate schemas in several repositories - in that case someday they will become inconsistent).
-- both [elm-graphql] and [elm-app] can be installed as global dependencies, but we don't consider it a good practice, because it immediately becomes harder to maintain versions.
+- both [elm-graphql] and [elm-live] can be installed as global dependencies, but we don't consider it a good practice, because it immediately becomes harder to maintain versions.
 - old generated files are removed by [elm-graphql] automatically, we don't need to worry about it.
 
   [elm ci]: https://github.com/kutyel/mu-graphql-example-elm/workflows/Elm%20CI/badge.svg
@@ -51,7 +51,7 @@ $ cd frontend && yarn && yarn codegen && yarn start
   [stack]: https://docs.haskellstack.org/en/stable/README/#how-to-install
   [yarn]: https://yarnpkg.com/getting-started/install
   [elm-graphql]: https://github.com/dillonkearns/elm-graphql/
-  [elm-app]: https://github.com/halfzebra/create-elm-app
+  [elm-live]: https://www.elm-live.com/
 
 ## Contributing:
 
