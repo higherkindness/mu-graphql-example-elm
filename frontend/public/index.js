@@ -1,10 +1,6 @@
-import './main.css'
-import { Elm } from './Main.elm'
-
-const app = Elm.Main.init({ node: document.getElementById('root') })
-const graphqlWebsocketsUrl = 'ws://localhost:8000'
-
 document.addEventListener('DOMContentLoaded', () => {
+  const app = Elm.Main.init({ node: document.getElementById('root') })
+  const graphqlWebsocketsUrl = 'ws://localhost:8000'
   let isActive = false
 
   app.ports.subscribeToAllBooks.subscribe((subscriptionString) => {
