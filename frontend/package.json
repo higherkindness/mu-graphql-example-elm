@@ -8,10 +8,8 @@
   },
   "author": "higherkindness",
   "license": "MIT",
-  "dependencies": {
-    "@dillonkearns/elm-graphql": "^4.2.1"
-  },
   "devDependencies": {
+    "@dillonkearns/elm-graphql": "^4.2.1",
     "elm-live": "^4.0.2"
   }
 }
