@@ -16,10 +16,11 @@
       "editor.formatOnSave": true
     },
     "[haskell]": {
-      "editor.formatOnSave": true
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "haskell.haskell"
     }
   },
   "extensions": {
-    "recommendations": ["haskell.haskell", "sjurmillidahl.ormolu-vscode", "elmtooling.elm-ls-vscode"]
+    "recommendations": ["haskell.haskell", "elmtooling.elm-ls-vscode"]
   }
 }

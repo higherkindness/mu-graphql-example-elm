@@ -16,6 +16,3 @@ package-lock.json
 
 # Desktop Services Store on macOS
 .DS_Store
-
-# Elm-graphql generated code
-src/LibraryApi

@@ -15,7 +15,7 @@ $ cd backend && stack run library
 And, in another terminal, this project:
 
 ```sh
-$ cd frontend && yarn && yarn codegen && yarn start
+$ cd frontend && npm install && npm run codegen codegen && npm start
 ```
 
 ## This example demonstrates how to use:
@@ -49,14 +49,13 @@ $ cd frontend && yarn && yarn codegen && yarn start
   [preview]: library.png
   [mu-haskell]: https://github.com/higherkindness/mu-haskell
   [stack]: https://docs.haskellstack.org/en/stable/README/#how-to-install
-  [yarn]: https://yarnpkg.com/getting-started/install
   [elm-graphql]: https://github.com/dillonkearns/elm-graphql/
   [elm-live]: https://www.elm-live.com/
 
 ## Contributing:
 
-You'll need a few things: [stack], [yarn] (npm) (and optionally, [Nix](https://nixos.org/)).
+You'll need a few things: [stack], npm (and optionally, [Nix](https://nixos.org/)).
 
 Run `nix-shell` the first time you clone the project, that way you'll have the generated `.pre-commit-config.yaml` git hook! 😉
 
-When using Visual Studio Code, please prefer opening a pre-configured workspace file `workspace.code-workspace`.
+When using Visual Studio Code, please prefer opening a pre-configured workspace file `mu-graphql-example-elm.code-workspace`.
